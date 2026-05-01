@@ -1,5 +1,5 @@
 [project]
-name = "two-point-filaments"
+name = "twopointfilaments"
 version = "0.1.0"
 description = "Code for figures and computations related to the two-point filamentary transport model"
 authors = [

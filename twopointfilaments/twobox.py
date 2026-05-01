@@ -31,9 +31,9 @@ class TBTPW:
         if what>0:
             self._calculate_far_sol()
         else:
-            self.ndN=np.nan
+            self.nuF=np.nan
             self.ndF=np.nan
-            self.TdN=np.nan
+            self.TuF=np.nan
             self.TdF=np.nan
 
     def _calculate_near_sol(self):
