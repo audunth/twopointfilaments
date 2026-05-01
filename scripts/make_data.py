@@ -29,7 +29,7 @@ def save_data(what,doL=0.33,saveloc='/home/ath019/Documents/manuscripts/two-poin
         D[6,i] = S.TdF
 
     np.savez(saveloc + f"TBTPW_what{what:.2f}_doL{doL:.2f}.npz",
-             ndN=D[0,:], TuN=D[1,:], TdN=D[2,:],
+             coll=coll, ndN=D[0,:], TuN=D[1,:], TdN=D[2,:],
              nuF=D[3,:], ndF=D[4,:], TuF=D[5,:], TdF=D[6,:])
 
 
