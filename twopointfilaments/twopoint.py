@@ -22,6 +22,6 @@ class TwoPoint:
         roots = P.roots()
         good0 = np.isreal(roots)
         good1 = roots[good0]>0
-        self.TdN = np.real(roots[good0][good1])**(4/7)
+        self.TdN = np.real(roots[good0][good1][0])**(4/7)
         self.TuN = 2/(self.ghat*self.xi*self.TdN**0.5)
-        self.ndN = 2*self.TuN/self.TdN
+        self.ndN = 0.5*self.TuN/self.TdN

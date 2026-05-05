@@ -1,9 +1,11 @@
 import numpy as np
-from twopointfilaments import TBTPW
+from twopointfilaments import TBTPW,TwoPoint
 """
 Here, we run the TBTPW model for the largest possible range of collisionality
 and several choices of the what parameter,
 """
+
+saveloc='/home/ath019/Documents/manuscripts/two-point/code/data/'
 
 # collmax[doL][what]
 # There is no theoretical limit at what=0.
@@ -13,7 +15,7 @@ collmax = {0.33: {0.5:17.2,
                   0.01:35.8,
                   0.0: 40}}
 
-def save_data(what,doL=0.33,saveloc='/home/ath019/Documents/manuscripts/two-point/code/data/'):
+def save_data(what,doL=0.33):
     coll = np.linspace(1.,collmax[doL][what],100)
 
     D = np.zeros([7,coll.size])
@@ -32,8 +34,22 @@ def save_data(what,doL=0.33,saveloc='/home/ath019/Documents/manuscripts/two-poin
              coll=coll, ndN=D[0,:], TuN=D[1,:], TdN=D[2,:],
              nuF=D[3,:], ndF=D[4,:], TuF=D[5,:], TdF=D[6,:])
 
+def save_data_twopoint(what=0, doL=0.33):
+    coll = np.linspace(1.,collmax[doL][what],100)
+
+    D = np.zeros([3,coll.size])
+
+    for i in range(coll.size):
+        S = TwoPoint(coll[i])
+        D[0,i] = S.ndN
+        D[1,i] = S.TuN
+        D[2,i] = S.TdN
+
+    np.savez(saveloc + "TwoPoint.npz",
+             coll=coll, ndN=D[0,:], TuN=D[1,:], TdN=D[2,:])
 
 if __name__=="__main__":
+    save_data_twopoint()
     what_arr = [0.0, 0.05, 0.5]
     for what in what_arr:
         save_data(what)
