@@ -21,11 +21,10 @@ collmax = {0.33: {10.0:12.0,
 def save_data(what,doL=0.33):
     coll = np.linspace(1.,collmax[doL][what],100)
 
-    D = np.zeros([9,coll.size])
+    D = np.zeros([8,coll.size])
 
     for i in range(coll.size):
         S = TBTPW(coll[i],what,doL=doL)
-        x, n, M, T = S.get_far_sol_profiles(xpoints=1000)
         D[0,i] = S.ndN
         D[1,i] = S.TuN
         D[2,i] = S.TdN
@@ -33,12 +32,11 @@ def save_data(what,doL=0.33):
         D[4,i] = S.ndF
         D[5,i] = S.TuF
         D[6,i] = S.TdF
-        D[7,i] = np.trapezoid(2.5*n*M*T**1.5*(1+M**2/5),x) # Average parallel convective heat flux
-        D[8,i] = (S.TuF**3.5-S.TdF**3.5)/S.xi # Average parallel conductive heat flux
+        D[7,i] = S.ghat*S.xi*S.ndF*S.TdF**1.5 # Parallel heat flux to target
 
     np.savez(saveloc + f"TBTPW_what{what:.2f}_doL{doL:.2f}.npz",
              coll=coll, ndN=D[0,:], TuN=D[1,:], TdN=D[2,:],
-             nuF=D[3,:], ndF=D[4,:], TuF=D[5,:], TdF=D[6,:], Qconv=D[7,:], Qcond=D[8,:])
+             nuF=D[3,:], ndF=D[4,:], TuF=D[5,:], TdF=D[6,:], Qpar=D[7,:])
 
 def save_data_twopoint(what=0, doL=0.33):
     coll = np.linspace(1.,collmax[doL][what],100)

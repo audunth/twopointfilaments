@@ -55,14 +55,14 @@ def plot_TdF_vs_TuN(what_arr, ghat=3.5, xi_factor=0.0711, doL=0.33):
     for i,ls in enumerate(['-','--',':']):
         Data = load_data(what_arr[i],doL)
         plt.loglog(Data['coll'], Data['TdF']/Data['TuN'], 'C0'+ls)
-        plt.loglog(Data['coll'], Data['TdN'], 'C1'+ls)
-        plt.loglog(Data['coll'], Data['TdF'], 'C2'+ls)
+        #plt.loglog(Data['coll'], Data['TdN']/Data['TuN'], 'C1'+ls)
+        plt.loglog(Data['coll'], Data['TdF'], 'C1'+ls)
     plt.loglog(Data['coll'],2.5/(ghat*xi_factor*Data['coll']),'k-.')
-    plt.loglog(Data['coll'][Data['coll']<7],3*Data['coll'][Data['coll']<7]**(-0.7),c='grey',ls='-.')
-    ax.text(3,0.7,r'$\nu_\mathrm{ref}^{-0.7}$',c='grey')
+    #plt.loglog(Data['coll'][Data['coll']<7],3*Data['coll'][Data['coll']<7]**(-0.7),c='grey',ls='-.')
+    #ax.text(3,0.7,r'$\nu_\mathrm{ref}^{-0.7}$',c='grey')
     cosmoplots.change_log_axis_base(ax, base=10)
     lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$T_\mathrm{d,F}/T_\mathrm{u,N}$'),
-             mlines.Line2D([], [], color='C1', ls = '-', label=r'$T_\mathrm{d,N}/T_\mathrm{ref}$'),
+             mlines.Line2D([], [], color='C1', ls = '-', label=r'$T_\mathrm{d,F}/T_\mathrm{ref}$'),
              mlines.Line2D([], [], color='k', ls = '-.', label=r'$5 /(2 \hat{\gamma}\xi)$')]
     plt.legend(handles=lines)
     plt.xlim(1,26)
@@ -185,6 +185,7 @@ def plot_pressure(what_arr, doL=0.33):
              mlines.Line2D([], [], color='C2', ls = '-', label=r'$\mathrm{u,F}$'),
              #mlines.Line2D([], [], color='C3', ls = '-', label=r'$\mathrm{d,F}$'),
              #mlines.Line2D([], [], color='k', ls = '-.', label=r'$\mathrm{ref}$')]
+             ]
     plt.legend(handles=lines)
     cosmoplots.change_log_axis_base(ax, base=10)
     plt.xlim(1,26)
@@ -193,34 +194,35 @@ def plot_pressure(what_arr, doL=0.33):
     plt.ylabel(r'$n T / n_\mathrm{u,N} T_\mathrm{ref}$')
     plt.savefig(saveloc+'pressure.eps')
 
-def plot_heat_fluxes(what_arr, doL=0.33)
+def plot_heat_fluxes(what_arr, doL=0.33):
     fig=plt.figure('heat_fluxes')
     ax = fig.gca()
-    for i,ls in enumerate(['-','--',':']):
+    for i,ls in zip([1,2],['--',':']):
         Data = load_data(what_arr[i],doL)
-        plt.semilogy(Data['coll'], Data['TuN'], 'C0'+ls)
-        #plt.plot(Data['coll'], Data['ndN']*Data['TdN'], 'C1'+ls)
-        plt.plot(Data['coll'], Data['nuF']*Data['TuF'], 'C2'+ls)
-        #plt.plot(Data['coll'], Data['ndF']*Data['TdF'], 'C3'+ls)
-    lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$\mathrm{u,N}$'),
-             #mlines.Line2D([], [], color='C1', ls = '-', label=r'$\mathrm{d,N}$'),
-             mlines.Line2D([], [], color='C2', ls = '-', label=r'$\mathrm{u,F}$'),
-             #mlines.Line2D([], [], color='C3', ls = '-', label=r'$\mathrm{d,F}$'),
-             #mlines.Line2D([], [], color='k', ls = '-.', label=r'$\mathrm{ref}$')]
+        ax.semilogy(Data['coll'], 2.5*what_arr[i]*Data['nuF']*Data['TuF'], 'C0'+ls)
+        ax.plot(Data['coll'], Data['Qpar'], 'C1'+ls)
+        ax.plot(Data['coll'], 3*Data['ndF']*Data['TdF']**1.5, 'C2'+ls)
+        #ax.plot(Data['coll'], np.abs(Data['Qpar']-3*Data['ndF']*Data['TdF']**1.5), 'C3'+ls)
+    lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$Q_F(0)$'),
+             mlines.Line2D([], [], color='C1', ls = '-', label=r'$Q_{\parallel\mathrm{, tot}}(1)$'),
+             mlines.Line2D([], [], color='C2', ls = '-', label=r'$Q_{\parallel\mathrm{, conv}}(1)$'),
+             #mlines.Line2D([], [], color='C3', ls = '-', label=r'$\left| Q_{\parallel\mathrm{, cond}}\right|$'),
+             ]
     plt.legend(handles=lines)
     cosmoplots.change_log_axis_base(ax, base=10)
-    plt.xlim(1,26)
+    #plt.xlim(1,26)
     #plt.ylim(0,4)
     plt.xlabel(r'$\nu_\mathrm{ref}$')
-    plt.ylabel(r'$n T / n_\mathrm{u,N} T_\mathrm{ref}$')
-    plt.savefig(saveloc+'pressure.eps')
+    plt.ylabel(r'$Q A_{q \parallel}/P_\mathrm{SOL}$')
+    plt.savefig(saveloc+'heat_fluxes.eps')
 
 if __name__=="__main__":
     what_arr = [0.,0.05,0.5]
     #plot_near_SOL(what_arr)
     #plot_far_SOL(what_arr)
-    #plot_TdF_vs_TuN(what_arr)
+    plot_TdF_vs_TuN(what_arr)
     #plot_wall_flux(what_arr)
     #plot_coll(what_arr)
     #plot_nvt(what_arr)
-    plot_pressure(what_arr)
+    #plot_pressure(what_arr)
+    plot_heat_fluxes(what_arr)
