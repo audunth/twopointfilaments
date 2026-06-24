@@ -171,11 +171,56 @@ def plot_nvtT(what_arr, ghat=3.5, xi_factor=0.0711, doL=0.33):
     plt.savefig(saveloc+'nvt_T.eps')
 
 
+def plot_pressure(what_arr, doL=0.33):
+    fig=plt.figure('pressure')
+    ax = fig.gca()
+    for i,ls in enumerate(['-','--',':']):
+        Data = load_data(what_arr[i],doL)
+        plt.semilogy(Data['coll'], Data['TuN'], 'C0'+ls)
+        #plt.plot(Data['coll'], Data['ndN']*Data['TdN'], 'C1'+ls)
+        plt.plot(Data['coll'], Data['nuF']*Data['TuF'], 'C2'+ls)
+        #plt.plot(Data['coll'], Data['ndF']*Data['TdF'], 'C3'+ls)
+    lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$\mathrm{u,N}$'),
+             #mlines.Line2D([], [], color='C1', ls = '-', label=r'$\mathrm{d,N}$'),
+             mlines.Line2D([], [], color='C2', ls = '-', label=r'$\mathrm{u,F}$'),
+             #mlines.Line2D([], [], color='C3', ls = '-', label=r'$\mathrm{d,F}$'),
+             #mlines.Line2D([], [], color='k', ls = '-.', label=r'$\mathrm{ref}$')]
+    plt.legend(handles=lines)
+    cosmoplots.change_log_axis_base(ax, base=10)
+    plt.xlim(1,26)
+    #plt.ylim(0,4)
+    plt.xlabel(r'$\nu_\mathrm{ref}$')
+    plt.ylabel(r'$n T / n_\mathrm{u,N} T_\mathrm{ref}$')
+    plt.savefig(saveloc+'pressure.eps')
+
+def plot_heat_fluxes(what_arr, doL=0.33)
+    fig=plt.figure('heat_fluxes')
+    ax = fig.gca()
+    for i,ls in enumerate(['-','--',':']):
+        Data = load_data(what_arr[i],doL)
+        plt.semilogy(Data['coll'], Data['TuN'], 'C0'+ls)
+        #plt.plot(Data['coll'], Data['ndN']*Data['TdN'], 'C1'+ls)
+        plt.plot(Data['coll'], Data['nuF']*Data['TuF'], 'C2'+ls)
+        #plt.plot(Data['coll'], Data['ndF']*Data['TdF'], 'C3'+ls)
+    lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$\mathrm{u,N}$'),
+             #mlines.Line2D([], [], color='C1', ls = '-', label=r'$\mathrm{d,N}$'),
+             mlines.Line2D([], [], color='C2', ls = '-', label=r'$\mathrm{u,F}$'),
+             #mlines.Line2D([], [], color='C3', ls = '-', label=r'$\mathrm{d,F}$'),
+             #mlines.Line2D([], [], color='k', ls = '-.', label=r'$\mathrm{ref}$')]
+    plt.legend(handles=lines)
+    cosmoplots.change_log_axis_base(ax, base=10)
+    plt.xlim(1,26)
+    #plt.ylim(0,4)
+    plt.xlabel(r'$\nu_\mathrm{ref}$')
+    plt.ylabel(r'$n T / n_\mathrm{u,N} T_\mathrm{ref}$')
+    plt.savefig(saveloc+'pressure.eps')
+
 if __name__=="__main__":
     what_arr = [0.,0.05,0.5]
     #plot_near_SOL(what_arr)
     #plot_far_SOL(what_arr)
-    plot_TdF_vs_TuN(what_arr)
-    plot_wall_flux(what_arr)
-    plot_coll(what_arr)
-    plot_nvt(what_arr)
+    #plot_TdF_vs_TuN(what_arr)
+    #plot_wall_flux(what_arr)
+    #plot_coll(what_arr)
+    #plot_nvt(what_arr)
+    plot_pressure(what_arr)
