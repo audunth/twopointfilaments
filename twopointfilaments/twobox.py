@@ -21,6 +21,7 @@ class TBTPW:
     def __init__(self,coll,what,gamma=7,tau=1,sqmass=0.023,doL=0.33):
         tautmp = (1+tau)
         
+        self.coll = coll
         self.xi = 7*tautmp**1.5*sqmass*coll/(3.2*2)
         self.what = what
         self.ghat = gamma/tautmp
@@ -36,16 +37,38 @@ class TBTPW:
             self.TuF=np.nan
             self.TdF=np.nan
 
+    def get_far_sol_profiles(self, xpoints=100):
+        assert self.what>0, "No far SOL for chosen parameters"
+        X = np.linspace(0,1,xpoints)[::-1]
+
+        def f(x):
+            return (1-np.exp(-x/self.doL))/(1-np.exp(-1./self.doL))
+        def M2(x,T):
+            # T is T(x,F)/TdF
+            return (1-(1-T*f(x)**2)**0.5)/(1+(1-T*f(x)**2)**0.5)
+            
+        def diffq(x,T):
+            c = 2*self.xi*self.ndF / (7*self.TdF**2)
+            return c*T**(-2.5)*f(x) * (0.5*T*(5+M2(x,T)) - self.ghat*self.xi)
+            
+        res=solve_ivp(diffq, [1.,0.], [1.,], t_eval=X)
+        print(res)
+        T = res.y[0,:]*self.TdF
+        M = np.sqrt(M2(X,res.y[0,:]))
+        n = 2*self.ndF/(np.sqrt(res.y[0,:])*(M2(X,res.y[0,:])+1))
+
+        return X, n, M, T
+
     def _calculate_near_sol(self):
         # The three equations combined give for the upstream temperature:
-        def f(TuN):
+        def g(TuN):
             z0 = 2.5*self.what*self.doL*self.xi*TuN
             e0 = 1-np.exp(-1/self.doL)
             e1 = 1-self.doL*e0
             
             return TuN**3.5-(2*(1-z0*e0)/(self.ghat*self.xi*TuN))**(7) - 1 + z0*e1
 
-        res = root_scalar(f,bracket=(1e-5,1e5),x0=1)
+        res = root_scalar(g,bracket=(1e-5,1e5),x0=1)
         self.TuN = res.root
         self.TdN = (2*(1-2.5*self.what*self.doL*self.xi*self.TuN*(1-np.exp(-1/self.doL)))/(self.ghat*self.xi*self.TuN))**(2) 
         self.ndN = 0.5*self.TuN/self.TdN
@@ -93,7 +116,7 @@ class TBTPW:
         def fitfun(theta):
             ndF, TdF = self._ndF_TdF(theta[0])
             res=solve_ivp(diffq, [1.,0.], [1.,], args=(ndF, TdF))
-            assert res.success, 'Did not find a solution to the energy equation'
+            assert res.success, f'Did not find a solution to the energy equation, coll={self.coll}, what={self.what}'
             return np.abs(theta-res.y[0,-1])
 
         return minimize(fitfun, x0, bounds=((1e-1,10.),))
