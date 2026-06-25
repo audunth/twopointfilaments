@@ -8,15 +8,15 @@ and several choices of the what parameter,
 saveloc='/home/ath019/Documents/manuscripts/two-point/code/data/'
 
 # collmax[doL][what]
-# There is no theoretical limit at what=0. Above 10, the limit is just ghat*xi=3 -> coll = 12.05
-collmax = {0.33: {10.0:12.0,
-                  5.0:12.3,
-                  1.0:15.2,
-                  0.5:17.2,
-                  0.1:22.9,
-                  0.05:26.1,
-                  0.01:35.7,
-                  0.0: 40}}
+# There is no theoretical limit at what=0. Above 10, the limit is just ghat*xi=3 -> coll = 16.8
+collmax = {0.33: {10.0:16.8,
+                  5.0:17.1,
+                  1.0:21.2,
+                  0.5:24.0,
+                  0.1:32.0,
+                  0.05:36.1,
+                  0.01:49.8,
+                  0.0: 50}}
 
 def save_data(what,doL=0.33):
     coll = np.linspace(1.,collmax[doL][what],100)

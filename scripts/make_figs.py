@@ -3,13 +3,32 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import cosmoplots
 plt.style.use(["cosmoplots.default"])
+from twopointfilaments import xi_factor
 
 dataloc='/home/ath019/Documents/manuscripts/two-point/code/data/'
 saveloc='/home/ath019/Documents/manuscripts/two-point/code/figures/'
 
+# These values are assumed for all plots
+GHAT = 3.5
+XI_FACTOR = xi_factor(1,'deuterium')
+
+# collmax[doL][what]
+# There is no theoretical limit at what=0. Above 10, the limit is just ghat*xi=3 -> coll = 16.8
+collmax = {0.33: {10.0:16.8,
+                  5.0:17.1,
+                  1.0:21.2,
+                  0.5:24.0,
+                  0.1:32.0,
+                  0.05:36.1,
+                  0.01:49.8,
+                  0.0: 50}}
+
 def load_data(what,doL):
-    file = dataloc+f"TBTPW_what{what:.2f}_doL{doL:.2f}.npz"
-    return np.load(file)
+    if what == 0.:
+        file = "TwoPoint.npz"
+    else:
+        file = f"TBTPW_what{what:.2f}_doL{doL:.2f}.npz"
+    return np.load(dataloc+file)
 
 def plot_near_SOL(what_arr, doL=0.33):
     plt.figure('near sol')
@@ -23,7 +42,7 @@ def plot_near_SOL(what_arr, doL=0.33):
              mlines.Line2D([], [], color='C1', ls = '-', label=r'$T_\mathrm{d,N}/T_\mathrm{u,N}$'),
              mlines.Line2D([], [], color='C2', ls = '-', label=r'$T_\mathrm{u,N}/T_\mathrm{ref}$')]
     plt.legend(handles=lines)
-    plt.xlim(1,26)
+    plt.xlim(1,32)
     plt.ylim(0,4)
     plt.xlabel(r'$\nu_\mathrm{ref}$')
     plt.savefig(saveloc+'near.eps')
@@ -43,21 +62,21 @@ def plot_far_SOL(what_arr, doL=0.33):
              #mlines.Line2D([], [], color='C2', ls = '-', label=r'$T_\mathrm{u,F}/T_\mathrm{u,N}$'),
              #mlines.Line2D([], [], color='C3', ls = '-', label=r'$n_\mathrm{u,F}/n_\mathrm{u,N}$')]
     plt.legend(handles=lines)
-    plt.xlim(1,26)
+    plt.xlim(1,32)
     #plt.ylim(0,4)
     plt.xlabel(r'$\nu_\mathrm{ref}$')
     plt.savefig(saveloc+'far.eps')
 
-def plot_TdF_vs_TuN(what_arr, ghat=3.5, xi_factor=0.0711, doL=0.33):
+def plot_TdF_vs_TuN(what_arr, doL=0.33):
     # ghat and xi_factor are for tau=1 and deuterium
     fig=plt.figure('TdF vs TuN')
     ax = fig.gca()
-    for i,ls in enumerate(['-','--',':']):
+    for i,ls in zip([1,2],['--',':']):
         Data = load_data(what_arr[i],doL)
         plt.loglog(Data['coll'], Data['TdF']/Data['TuN'], 'C0'+ls)
         #plt.loglog(Data['coll'], Data['TdN']/Data['TuN'], 'C1'+ls)
         plt.loglog(Data['coll'], Data['TdF'], 'C1'+ls)
-    plt.loglog(Data['coll'],2.5/(ghat*xi_factor*Data['coll']),'k-.')
+    plt.loglog(Data['coll'],2.5/(GHAT*XI_FACTOR*Data['coll']),'k-.')
     #plt.loglog(Data['coll'][Data['coll']<7],3*Data['coll'][Data['coll']<7]**(-0.7),c='grey',ls='-.')
     #ax.text(3,0.7,r'$\nu_\mathrm{ref}^{-0.7}$',c='grey')
     cosmoplots.change_log_axis_base(ax, base=10)
@@ -65,7 +84,7 @@ def plot_TdF_vs_TuN(what_arr, ghat=3.5, xi_factor=0.0711, doL=0.33):
              mlines.Line2D([], [], color='C1', ls = '-', label=r'$T_\mathrm{d,F}/T_\mathrm{ref}$'),
              mlines.Line2D([], [], color='k', ls = '-.', label=r'$5 /(2 \hat{\gamma}\xi)$')]
     plt.legend(handles=lines)
-    plt.xlim(1,26)
+    plt.xlim(1,32)
     #plt.ylim(1e-1,10)
     plt.xlabel(r'$\nu_\mathrm{ref}$')
     plt.ylabel(r'$T$')
@@ -84,7 +103,7 @@ def plot_wall_flux(what_arr, doL=0.33):
     lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$S_F(0)/\hat{\omega}$'),
              mlines.Line2D([], [], color='C1', ls = '-', label=r'$2 Q_F(0)/(5\hat{\omega})$')]
     plt.legend(handles=lines)
-    plt.xlim(1,26)
+    plt.xlim(1,32)
     plt.xlabel(r'$\nu_\mathrm{ref}$')
     plt.savefig(saveloc+'wall_flux.eps')
 
@@ -96,8 +115,9 @@ def plot_coll(what_arr, doL=0.33):
         Data = load_data(what_arr[i],doL)
         plt.semilogy(Data['coll'], 1/Data['TuN']**2, 'C0'+ls)
         plt.plot(Data['coll'], Data['ndN']/Data['TdN']**2, 'C1'+ls)
-        plt.plot(Data['coll'], Data['nuF']/Data['TuF']**2, 'C2'+ls)
-        plt.plot(Data['coll'], Data['ndF']/Data['TdF']**2, 'C3'+ls)
+        if i>0:
+            plt.plot(Data['coll'], Data['nuF']/Data['TuF']**2, 'C2'+ls)
+            plt.plot(Data['coll'], Data['ndF']/Data['TdF']**2, 'C3'+ls)
     lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$\mathrm{u,N}$'),
              mlines.Line2D([], [], color='C1', ls = '-', label=r'$\mathrm{d,N}$'),
              mlines.Line2D([], [], color='C2', ls = '-', label=r'$\mathrm{u,F}$'),
@@ -105,13 +125,13 @@ def plot_coll(what_arr, doL=0.33):
              mlines.Line2D([], [], color='k', ls = '-.', label=r'$\mathrm{ref}$')]
     plt.legend(handles=lines)
     cosmoplots.change_log_axis_base(ax, base=10)
-    plt.xlim(1,26)
+    plt.xlim(1,32)
     #plt.ylim(0,4)
     plt.xlabel(r'$\nu_\mathrm{ref}$')
     plt.ylabel(r'$\nu/\nu_\mathrm{ref}$')
     plt.savefig(saveloc+'coll.eps')
 
-def plot_nvt(what_arr, ghat=3.5, xi_factor=0.0711, doL=0.33):
+def plot_nvt(what_arr, doL=0.33):
     # ghat and xi_factor are for tau=1 and deuterium
 
     # We make an artificial density ramp by letting T_ref be constant. Then n_{u,N} ~ nu_ref,
@@ -125,8 +145,9 @@ def plot_nvt(what_arr, ghat=3.5, xi_factor=0.0711, doL=0.33):
         Data = load_data(what_arr[i],doL)
         plt.loglog(Data['coll'],Data['TuN'], 'C0'+ls)
         plt.plot(Data['ndN']*Data['coll'],Data['TdN'],  'C1'+ls)
-        plt.plot(Data['nuF']*Data['coll'],Data['TuF'],  'C2'+ls)
-        plt.plot(Data['ndF']*Data['coll'],Data['TdF'],  'C3'+ls)
+        if i>0:
+            plt.plot(Data['nuF']*Data['coll'],Data['TuF'],  'C2'+ls)
+            plt.plot(Data['ndF']*Data['coll'],Data['TdF'],  'C3'+ls)
     lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$\mathrm{u,N}$'),
              mlines.Line2D([], [], color='C1', ls = '-', label=r'$\mathrm{d,N}$'),
              mlines.Line2D([], [], color='C2', ls = '-', label=r'$\mathrm{u,F}$'),
@@ -143,9 +164,7 @@ def plot_nvt(what_arr, ghat=3.5, xi_factor=0.0711, doL=0.33):
     plt.ylabel(r'$T/T_\mathrm{ref}$')
     plt.savefig(saveloc+'nvt.eps')
 
-def plot_nvtT(what_arr, ghat=3.5, xi_factor=0.0711, doL=0.33):
-    # ghat and xi_factor are for tau=1 and deuterium
-
+def plot_nvtT(what_arr, doL=0.33):
     # We make an artificial density ramp by letting T_ref be constant. Then n_{u,N} ~ nu_ref,
     # and we can simulate the density ramp by multiplying all densities by nu_ref = Data['coll']
     fig=plt.figure('nvt')
@@ -156,15 +175,16 @@ def plot_nvtT(what_arr, ghat=3.5, xi_factor=0.0711, doL=0.33):
     for i,ls in enumerate(['-','--',':']):
         Data = load_data(what_arr[i],doL)
         plt.loglog(Data['ndN'],Data['TdN']*Data['coll']**(-0.5),  'C1'+ls)
-        plt.plot(Data['nuF'],Data['TuF']*Data['coll']**(-0.5),  'C2'+ls)
-        plt.plot(Data['ndF'],Data['TdF']*Data['coll']**(-0.5),  'C3'+ls)
+        if i>0:
+            plt.plot(Data['nuF'],Data['TuF']*Data['coll']**(-0.5),  'C2'+ls)
+            plt.plot(Data['ndF'],Data['TdF']*Data['coll']**(-0.5),  'C3'+ls)
     lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$\mathrm{u,N}$'),
              mlines.Line2D([], [], color='C1', ls = '-', label=r'$\mathrm{d,N}$'),
              mlines.Line2D([], [], color='C2', ls = '-', label=r'$\mathrm{u,F}$'),
              mlines.Line2D([], [], color='C3', ls = '-', label=r'$\mathrm{d,F}$')]
     plt.legend(handles=lines)
     cosmoplots.change_log_axis_base(ax, base=10)
-    #plt.xlim(1,26)
+    #plt.xlim(1,32)
     #plt.ylim(0,4)
     plt.xlabel(r'$n/n_\mathrm{u,N}$')
     plt.ylabel(r'$T \nu_\mathrm{ref}^{-1/2}/T_\mathrm{ref}$')
@@ -178,17 +198,18 @@ def plot_pressure(what_arr, doL=0.33):
         Data = load_data(what_arr[i],doL)
         plt.semilogy(Data['coll'], Data['TuN'], 'C0'+ls)
         #plt.plot(Data['coll'], Data['ndN']*Data['TdN'], 'C1'+ls)
-        plt.plot(Data['coll'], Data['nuF']*Data['TuF'], 'C2'+ls)
+        if i>0:
+            plt.plot(Data['coll'], Data['nuF']*Data['TuF'], 'C1'+ls)
         #plt.plot(Data['coll'], Data['ndF']*Data['TdF'], 'C3'+ls)
     lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$\mathrm{u,N}$'),
              #mlines.Line2D([], [], color='C1', ls = '-', label=r'$\mathrm{d,N}$'),
-             mlines.Line2D([], [], color='C2', ls = '-', label=r'$\mathrm{u,F}$'),
+             mlines.Line2D([], [], color='C1', ls = '-', label=r'$\mathrm{u,F}$'),
              #mlines.Line2D([], [], color='C3', ls = '-', label=r'$\mathrm{d,F}$'),
              #mlines.Line2D([], [], color='k', ls = '-.', label=r'$\mathrm{ref}$')]
              ]
     plt.legend(handles=lines)
     cosmoplots.change_log_axis_base(ax, base=10)
-    plt.xlim(1,26)
+    plt.xlim(1,32)
     #plt.ylim(0,4)
     plt.xlabel(r'$\nu_\mathrm{ref}$')
     plt.ylabel(r'$n T / n_\mathrm{u,N} T_\mathrm{ref}$')
@@ -210,19 +231,66 @@ def plot_heat_fluxes(what_arr, doL=0.33):
              ]
     plt.legend(handles=lines)
     cosmoplots.change_log_axis_base(ax, base=10)
-    #plt.xlim(1,26)
+    #plt.xlim(1,32)
     #plt.ylim(0,4)
     plt.xlabel(r'$\nu_\mathrm{ref}$')
     plt.ylabel(r'$Q A_{q \parallel}/P_\mathrm{SOL}$')
     plt.savefig(saveloc+'heat_fluxes.eps')
 
+
+def plot_solvability():
+    doL=0.33
+    nu = np.linspace(15,55,100)
+    what_log = np.linspace(-3,1.1,100)
+
+    Nu, What_log = np.meshgrid(nu,what_log,indexing='ij')
+    Xi = XI_FACTOR*Nu
+    
+    def cond(doL):
+        return Xi**3.5*GHAT**2.5*(GHAT*Xi-3)*10**(What_log) - (7/4)*2.5**5.2/(doL*np.cosh(1/doL)**2)
+    plt.figure('condition')
+    plt.axvline(16.8,color='grey',ls=':')
+    plt.contourf(Nu, What_log, cond(doL),levels=[0.,1e8],cmap="bone")
+    plt.contour(Nu,What_log,cond(doL),levels=[0.,],colors='k')
+    plt.contour(Nu,What_log,cond(0.2),levels=[0.,],colors='C0')
+    plt.contour(Nu,What_log,cond(0.5),levels=[0.,],colors='C1')
+    
+    what_num_log = np.zeros(7)
+    nu_num = np.zeros(7)
+
+    for i,w in enumerate(collmax[doL].keys()):
+        if w>0:
+            what_num_log[i] = np.log10(w)
+            nu_num[i] = collmax[doL][w]
+    lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$\hat{\delta}=1/5$'),
+             mlines.Line2D([], [], color='k', ls = '-', label=r'$\hat{\delta}=1/3$'),
+             mlines.Line2D([], [], color='C1', ls = '-', label=r'$\hat{\delta}=1/2$'),
+             ]
+    plt.legend(handles=lines)
+    plt.scatter(nu_num,what_num_log, s=6,color='w', edgecolor='C2')
+    plt.yticks([-3,-2,-1,0,1],labels=[r'$10^{-3}$',r'$10^{-2}$',r'$10^{-1}$',r'$1$',r'$10$'])
+    plt.xlabel(r'$\nu_\mathrm{ref}$')
+    plt.ylabel(r'$\hat{\omega}$')
+    plt.savefig(saveloc+'condition.eps')
+
+def plot_delta_condition():
+    doL = 10.**np.linspace(-3,0,100)
+    cond = (7/4)*2.5**5.2/(doL*np.cosh(1/doL)**2)
+    plt.figure('delta condition')
+    plt.semilogx(doL,cond)
+    plt.xlabel(r'$\hat{\delta}$')
+    plt.ylabel(r'$(7/4)(5/2)^{5/2} \mathrm{sech}(1/\hat{\delta})^2/\hat{\delta}$')
+    plt.savefig(saveloc+'delta_condition.eps')
+
 if __name__=="__main__":
-    what_arr = [0.,0.05,0.5]
+    what_arr = [0.,0.1,1.]
     #plot_near_SOL(what_arr)
     #plot_far_SOL(what_arr)
-    plot_TdF_vs_TuN(what_arr)
+    #plot_TdF_vs_TuN(what_arr)
     #plot_wall_flux(what_arr)
     #plot_coll(what_arr)
     #plot_nvt(what_arr)
     #plot_pressure(what_arr)
-    plot_heat_fluxes(what_arr)
+    #plot_heat_fluxes(what_arr)
+    plot_solvability()
+    #plot_delta_condition()
