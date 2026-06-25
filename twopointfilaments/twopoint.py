@@ -1,4 +1,5 @@
 import numpy as np
+from twopointfilaments import constants
 
 class TwoPoint:
     """
@@ -8,14 +9,12 @@ class TwoPoint:
         coll: Reference collisionality
         gamma: Sheath heat coeffificient
         tau: Ion to electron temperature ratio. 
-        sqmass: Square root of electron to total mass ratio. 
-                Default for deuterium.
+        ion_species: Default to deuterium.
     """
-    def __init__(self,coll,gamma=7,tau=1,sqmass=0.023):
-        tautmp = (1+tau)
-        
-        self.xi = 7*tautmp**1.5*sqmass*coll/(3.2*2)
-        self.ghat = gamma/tautmp
+    def __init__(self,coll,gamma=7,tau=1,ion_species='deuterium'):
+        self.coll = coll
+        self.xi = constants.xi_factor(tau,ion_species)*coll
+        self.ghat = gamma/(1+tau)
 
         # Canclulate Td^{7/4} 
         P = np.polynomial.Polynomial([-(2/(self.ghat*self.xi))**3.5, 1, 0, 1.])

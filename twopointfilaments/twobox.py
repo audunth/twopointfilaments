@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import root_scalar, minimize
+from twopointfilaments import constants
 
 class TBTPW:
     """
@@ -14,17 +15,14 @@ class TBTPW:
         what: Perpendicular to parallel transport time
         gamma: Sheath heat coeffificient
         tau: Ion to electron temperature ratio. 
-        sqmass: Square root of electron to total mass ratio. 
-                Default for deuterium.
+        ion_species: Default to deuterium.
         doL: normalized parallel ballooning length.
     """
-    def __init__(self,coll,what,gamma=7,tau=1,sqmass=0.023,doL=0.33):
-        tautmp = (1+tau)
-        
+    def __init__(self,coll,what,gamma=7,tau=1,ion_species='deuterium',doL=0.33):
         self.coll = coll
-        self.xi = 7*tautmp**1.5*sqmass*coll/(3.2*2)
+        self.xi = constants.xi_factor(tau,ion_species)*coll
         self.what = what
-        self.ghat = gamma/tautmp
+        self.ghat = gamma/(1+tau)
         self.doL = doL
 
         self._calculate_near_sol()
