@@ -11,7 +11,7 @@ def plot_far_sol_profiles(TBTPW):
         
     def diffq(x,T):
         c = 2*TBTPW.xi*TBTPW.ndF / (7*TBTPW.TdF**2)
-        return c*T**(-2.5)*f(x) * (0.5*T*(5+M2(x,T)) - TBTPW.ghat*TBTPW.xi)
+        return c*T**(-2.5)*f(x) * (0.5*T*(5+M2(x,T)) - TBTPW.ghat)
 
     x = np.linspace(0,1,1000)[::-1]
     res=solve_ivp(diffq, [1.,0.], [1.,], t_eval=x)

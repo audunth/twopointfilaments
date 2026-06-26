@@ -84,7 +84,7 @@ class TBTPW:
         # Returns ndF and TdF for given theta=TuF/TdF
 
         a = self.what*self.doL*(1-np.exp(-1./self.doL))
-        c = 2.5*a/(self.ghat*self.xi)
+        c = 2.5*a/(self.ghat)
         b = c*self.TuN
 
         # Canclulate sqrt(TdF)
@@ -109,7 +109,7 @@ class TBTPW:
             
         def diffq(x,T,ndF,TdF):
             c = 2*self.xi*ndF / (7*TdF**2)
-            return c*T**(-2.5)*f(x) * (0.5*T*(5+M2(x,T)) - self.ghat*self.xi)
+            return c*T**(-2.5)*f(x) * (0.5*T*(5+M2(x,T)) - self.ghat)
             
         def fitfun(theta):
             ndF, TdF = self._ndF_TdF(theta[0])
