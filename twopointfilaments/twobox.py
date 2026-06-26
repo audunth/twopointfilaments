@@ -47,7 +47,7 @@ class TBTPW:
             
         def diffq(x,T):
             c = 2*self.xi*self.ndF / (7*self.TdF**2)
-            return c*T**(-2.5)*f(x) * (0.5*T*(5+M2(x,T)) - self.ghat*self.xi)
+            return c*T**(-2.5)*f(x) * (0.5*T*(5+M2(x,T)) - self.ghat)
             
         res=solve_ivp(diffq, [1.,0.], [1.,], t_eval=X)
         print(res)
