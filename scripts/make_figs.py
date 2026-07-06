@@ -248,8 +248,8 @@ def plot_flux_error(what_arr, doL=0.33,polyorder=5):
     for i,ls in zip([1,2],['--',':']):
         Data = load_data(what_arr[i],doL)
         
-        ax.plot(Data['coll'], (doL*Data['nuF']*(1-np.exp(-1/doL)))/Data['SFint'], 'C0'+ls)
-        ax.plot(Data['coll'], (doL*Data['nuF']*Data['TuF']*(1-np.exp(-1/doL)))/Data['QFint'], 'C1'+ls)
+        ax.plot(Data['coll'], np.abs((doL*Data['nuF']*(1-np.exp(-1/doL)))-Data['SFint'])/Data['SFint'], 'C0'+ls)
+        ax.plot(Data['coll'], np.abs((doL*Data['nuF']*Data['TuF']*(1-np.exp(-1/doL)))-Data['QFint'])/Data['QFint'], 'C1'+ls)
 
         SN_approx = (doL*(1-np.exp(-1/doL)))
         SN_linear = doL*(doL*(Data['ndN']-1)+1+np.exp(-1/doL)*(doL-(1+doL)*Data['ndN']))
@@ -262,9 +262,9 @@ def plot_flux_error(what_arr, doL=0.33,polyorder=5):
         QN_linear = doL*(doL*(Data['ndN']*Data['TdN']-Data['TuN'])+Data['TuN']+np.exp(-1/doL)*(doL*Data['TuN']-(1+doL)*Data['ndN']*Data['TdN']))
 
 
-        ax.plot(Data['coll'], SN_approx/SN_linear, 'C2'+ls)
-        ax.plot(Data['coll'], SN_approx/SN_polynomial, 'C3'+ls)
-        ax.plot(Data['coll'], QN_approx/QN_linear, 'C4'+ls)
+        ax.plot(Data['coll'], np.abs(SN_approx-SN_linear)/SN_linear, 'C2'+ls)
+        ax.plot(Data['coll'], np.abs(SN_approx-SN_polynomial)/SN_polynomial, 'C3'+ls)
+        ax.plot(Data['coll'], np.abs(QN_approx-QN_linear)/QN_linear, 'C4'+ls)
     lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$\mathcal{S}_\mathrm{F}$'),
              mlines.Line2D([], [], color='C1', ls = '-', label=r'$\mathcal{Q}_\mathrm{F}$'),
              mlines.Line2D([], [], color='C2', ls = '-', label=r'$\mathcal{S}_\mathrm{N,1}$'),
@@ -274,7 +274,7 @@ def plot_flux_error(what_arr, doL=0.33,polyorder=5):
     plt.legend(handles=lines)
     #cosmoplots.change_log_axis_base(ax, base=10)
     #plt.xlim(1,32)
-    plt.ylim(0.,1.2)
+    plt.ylim(0.,1.)
     plt.xlabel(r'$\nu_\mathrm{ref}$')
     plt.ylabel(r'$\mathcal{E}$')
     plt.savefig(saveloc+'flux_error.eps')
@@ -350,14 +350,15 @@ def plot_doL_scan():
 
 if __name__=="__main__":
     what_arr = [0.,0.05,0.5]
-    plot_near_SOL(what_arr,doL=0.2)
-    plot_far_SOL(what_arr,doL=0.2)
-    plot_TdF_vs_TuN(what_arr,doL=0.2)
-    plot_wall_flux(what_arr,doL=0.2)
-    plot_coll(what_arr,doL=0.2)
-    plot_nvt(what_arr,doL=0.2)
-    plot_pressure(what_arr,doL=0.2)
-    plot_heat_fluxes(what_arr,doL=0.2)
+    if False:
+        plot_near_SOL(what_arr,doL=0.2)
+        plot_far_SOL(what_arr,doL=0.2)
+        plot_TdF_vs_TuN(what_arr,doL=0.2)
+        plot_wall_flux(what_arr,doL=0.2)
+        plot_coll(what_arr,doL=0.2)
+        plot_nvt(what_arr,doL=0.2)
+        plot_pressure(what_arr,doL=0.2)
+        plot_heat_fluxes(what_arr,doL=0.2)
     plot_flux_error(what_arr,doL=0.33)
     #plot_solvability()
     #plot_delta_condition()
