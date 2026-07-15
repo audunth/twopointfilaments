@@ -106,8 +106,8 @@ def plot_wall_flux(what_arr, doL=0.33):
         ax.plot(Data['coll'], XI_FACTOR*Data['coll']*Data['nuF']*Data['TuF'], 'C1'+ls)
 
     cosmoplots.change_log_axis_base(ax, base=10)
-    lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$S_F(0)/\hat{\omega}$'),
-             mlines.Line2D([], [], color='C1', ls = '-', label=r'$2 Q_F(0)/(5\hat{\omega})$')]
+    lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$\Gamma_{\perp,F}(0)/\hat{\omega}$'),
+             mlines.Line2D([], [], color='C1', ls = '-', label=r'$2 q_{\perp,F}(0)/(5\hat{\omega})$')]
     plt.legend(handles=lines)
     #plt.xlim(1,32)
     plt.xlabel(r'$\nu_\mathrm{ref}$')
@@ -227,10 +227,10 @@ def plot_heat_fluxes(what_arr, doL=0.33):
         ax.plot(Data['coll'], Data['Qpar'], 'C1'+ls)
         ax.plot(Data['coll'], 3*XI_FACTOR*Data['coll']*Data['ndF']*Data['TdF']**1.5, 'C2'+ls)
         ax.plot(Data['coll'], Data['Qparcond'], 'C3'+ls)
-    lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$Q_F(0)$'),
-             mlines.Line2D([], [], color='C1', ls = '-', label=r'$Q_{\parallel\mathrm{, tot}}(1)$'),
-             mlines.Line2D([], [], color='C2', ls = '-', label=r'$Q_{\parallel\mathrm{, conv}}(1)$'),
-             mlines.Line2D([], [], color='C3', ls = '-', label=r'$Q_{\parallel\mathrm{, cond}}(1)$'),
+    lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$q_{\perp,F}(0)$'),
+             mlines.Line2D([], [], color='C1', ls = '-', label=r'$q_{\parallel\mathrm{, tot}}(1)$'),
+             mlines.Line2D([], [], color='C2', ls = '-', label=r'$q_{\parallel\mathrm{, conv}}(1)$'),
+             mlines.Line2D([], [], color='C3', ls = '-', label=r'$q_{\parallel\mathrm{, cond}}(1)$'),
              ]
     plt.legend(handles=lines)
     cosmoplots.change_log_axis_base(ax, base=10)
@@ -354,12 +354,12 @@ if __name__=="__main__":
         plot_near_SOL(what_arr,doL=0.2)
         plot_far_SOL(what_arr,doL=0.2)
         plot_TdF_vs_TuN(what_arr,doL=0.2)
-        plot_wall_flux(what_arr,doL=0.2)
         plot_coll(what_arr,doL=0.2)
         plot_nvt(what_arr,doL=0.2)
         plot_pressure(what_arr,doL=0.2)
-        plot_heat_fluxes(what_arr,doL=0.2)
-    plot_flux_error(what_arr,doL=0.33)
+    plot_wall_flux(what_arr,doL=0.2)
+    plot_heat_fluxes(what_arr,doL=0.2)
+    #plot_flux_error(what_arr,doL=0.33)
     #plot_solvability()
     #plot_delta_condition()
     #plot_doL_scan()
