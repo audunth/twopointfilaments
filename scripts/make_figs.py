@@ -351,16 +351,16 @@ def plot_doL_scan():
 
 if __name__=="__main__":
     what_arr = [0.,0.05,0.5]
-    if False:
-        plot_near_SOL(what_arr,doL=0.2)
-        plot_far_SOL(what_arr,doL=0.2)
-        plot_TdF_vs_TuN(what_arr,doL=0.2)
-        plot_coll(what_arr,doL=0.2)
-        plot_nvt(what_arr,doL=0.2)
-        plot_pressure(what_arr,doL=0.2)
-        plot_wall_flux(what_arr,doL=0.2)
-        plot_heat_fluxes(what_arr,doL=0.2)
-    plot_flux_error(what_arr,doL=0.2)
+    #if False:
+    plot_near_SOL(what_arr,doL=0.2)
+    plot_far_SOL(what_arr,doL=0.2)
+    plot_TdF_vs_TuN(what_arr,doL=0.2)
+    plot_coll(what_arr,doL=0.2)
+    plot_nvt(what_arr,doL=0.2)
+    plot_pressure(what_arr,doL=0.2)
+    plot_wall_flux(what_arr,doL=0.2)
+    plot_heat_fluxes(what_arr,doL=0.2)
+    #plot_flux_error(what_arr,doL=0.2)
     #plot_solvability()
     #plot_delta_condition()
     #plot_doL_scan()
