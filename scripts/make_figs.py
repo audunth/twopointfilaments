@@ -265,6 +265,7 @@ def plot_flux_error(what_arr, doL=0.33,polyorder=5):
         ax.plot(Data['coll'], np.abs(SN_approx-SN_linear)/SN_linear, 'C2'+ls)
         ax.plot(Data['coll'], np.abs(SN_approx-SN_polynomial)/SN_polynomial, 'C3'+ls)
         ax.plot(Data['coll'], np.abs(QN_approx-QN_linear)/QN_linear, 'C4'+ls)
+        ax.plot(Data['coll'], np.abs(SN_linear-SN_polynomial)/SN_polynomial, 'C5'+ls)
     lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$\mathcal{S}_\mathrm{F}$'),
              mlines.Line2D([], [], color='C1', ls = '-', label=r'$\mathcal{Q}_\mathrm{F}$'),
              mlines.Line2D([], [], color='C2', ls = '-', label=r'$\mathcal{S}_\mathrm{N,1}$'),
@@ -357,9 +358,9 @@ if __name__=="__main__":
         plot_coll(what_arr,doL=0.2)
         plot_nvt(what_arr,doL=0.2)
         plot_pressure(what_arr,doL=0.2)
-    plot_wall_flux(what_arr,doL=0.2)
-    plot_heat_fluxes(what_arr,doL=0.2)
-    #plot_flux_error(what_arr,doL=0.33)
+        plot_wall_flux(what_arr,doL=0.2)
+        plot_heat_fluxes(what_arr,doL=0.2)
+    plot_flux_error(what_arr,doL=0.2)
     #plot_solvability()
     #plot_delta_condition()
     #plot_doL_scan()
