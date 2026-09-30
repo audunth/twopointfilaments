@@ -1,8 +1,9 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import root_scalar, minimize
-from twopointfilaments import constants
+from twopointfilaments import constants, TwoPoint
 import sympy as sy
+import warnings
 
 class TBTPW:
     """
@@ -18,23 +19,36 @@ class TBTPW:
         tau: Ion to electron temperature ratio. 
         ion_species: Default to deuterium.
         doL: normalized parallel ballooning length.
+        lhat: far-SOL width divided by near-SOL width.
     """
-    def __init__(self,coll,what,gamma=7,tau=1,ion_species='deuterium',doL=0.33):
+    def __init__(self,coll,what,gamma=7,tau=1,ion_species='deuterium',doL=0.33,lhat=5):
         self.coll = coll
         self.xi = constants.xi_factor(tau,ion_species)*coll
         self.what = what
         self.ghat = gamma/(1+tau)
         self.doL = doL
+        self.lhat = lhat
+        self.messages = []
 
-        self._calculate_near_sol()
+        self.ndN=np.nan
+        self.TuN=np.nan
+        self.TdN=np.nan
+
+        self.nuF=np.nan
+        self.ndF=np.nan
+        self.TuF=np.nan
+        self.TdF=np.nan
+
 
         if what>0:
+            self._calculate_near_sol()
             self._calculate_far_sol()
         else:
-            self.nuF=np.nan
-            self.ndF=np.nan
-            self.TuF=np.nan
-            self.TdF=np.nan
+            TP = TwoPoint(coll, gamma, tau, ion_species)
+            self.nuN = 1
+            self.ndN = TP.ndN
+            self.TuN = TP.TuN
+            self.TdN = TP.TdN
 
     def _calculate_near_sol(self):
         # The three equations combined give for the upstream temperature:
@@ -57,28 +71,30 @@ class TBTPW:
                 (e1, 1-self.doL*(1-np.exp(-1/self.doL))),
                 ])
             
-            real_roots = sy.real_roots(P)
-            assert(len(real_roots)==1), 'Near-SOL does not have a unique solution for TuN.'
-
-            return float(real_roots[0].evalf()**2)
-        self.TuN = find_TuN() 
+            positive_roots = []
+            for r in sy.real_roots(P):
+                if r>0:
+                    positive_roots.append(r)
+            assert(len(positive_roots)==1), f'Near-SOL does not have a unique solution for TuN. Roots:{[r.evalf() for r in positive_roots]}'
+            return float(positive_roots[0].evalf()**2)
+        self.TuN = find_TuN()
+        assert(1-2.5*self.what*self.doL*self.xi*self.TuN*(1-np.exp(-1/self.doL))>0), 'Near-SOL sheath dissipation is negative.'
         self.TdN = (2*(1-2.5*self.what*self.doL*self.xi*self.TuN*(1-np.exp(-1/self.doL)))/(self.ghat*self.xi*self.TuN))**(2) 
         self.ndN = 0.5*self.TuN/self.TdN
         self.nuN = 1.
 
-
-
     def _calculate_far_sol(self):
         def f(TdF):
-            a = 5*self.what*self.doL*(1-np.exp(-1./self.doL))/self.ghat
+            a = 5*self.what*self.doL*(1-np.exp(-1./self.doL))/(self.ghat*self.lhat)
             b = (5/14)*self.xi*(self.ghat-3)*self.what*self.doL**2*(1-np.exp(-1./self.doL))**2*np.exp(1./self.doL)*self.TuN/self.ghat
 
             return TdF**3.5+a*TdF**3-b
         
-        res = root_scalar(f,bracket=(1e-6,1e5),x0=1)
+        res = root_scalar(f,bracket=(0.,1e10),x0=1)
         self.TdF = res.root
         self.ndF = 7*np.exp(-1./self.doL)*self.TdF**2/( self.xi*(self.ghat-3)*self.doL*(1-np.exp(-1./self.doL)) )
-        self.nuF = 1.- self.ndF*self.TdF**0.5/(self.what*self.doL*(1.-np.exp(-1./self.doL)))
+        self.nuF = self.lhat*(1.- self.ndF*self.TdF**0.5/(self.what*self.doL*(1.-np.exp(-1./self.doL))))
+        assert (self.nuF>0), 'Far-SOL upstream density is negative.'
         self.TuF = 2*self.ndF*self.TdF/self.nuF
 
     def get_far_sol_profiles(self, xpoints=100):
