@@ -13,27 +13,11 @@ saveloc='/home/ath019/Documents/manuscripts/two-point/code/figures/'
 GHAT = 3.5
 XI_FACTOR = xi_factor(1,'deuterium')
 
-# collmax[doL][what]
-# There is no theoretical limit at what=0. Above 1, the limit is very low. Below 0.5, the limit is very large.
-collmax = {0.33: {1.0:29.9,
-                  0.5:57.8,
-                  0.1:60.,
-                  0.05:60.,
-                  0.01:60.,
-                  0.0: 60.},
-           0.2: {1.0:17.1,
-                 0.5:30.6,
-                 0.1:60.,
-                 0.05:60.,
-                 0.01:60.,
-                 0.0: 60.},
-           }
-
-def load_data(what,doL):
+def load_data(what,doL=0.2,lhat=5):
     if what == 0.:
         file = "TwoPoint.npz"
     else:
-        file = f"TBTPW_what{what:.2f}_doL{doL:.2f}.npz"
+        file = f"TBTPW_what{what:.2f}_doL{doL:.2f}_lhat{lhat:.2f}.npz"
     return np.load(dataloc+file)
 
 def plot_near_SOL(what_arr, doL=0.33):
@@ -281,51 +265,6 @@ def plot_flux_error(what_arr, doL=0.33,polyorder=5):
     plt.savefig(saveloc+'flux_error.eps')
 
 
-def plot_solvability():
-    doL=0.33
-    nu = np.linspace(15,55,100)
-    what_log = np.linspace(-3,1.1,100)
-
-    Nu, What_log = np.meshgrid(nu,what_log,indexing='ij')
-    Xi = XI_FACTOR*Nu
-    
-    def cond(doL):
-        return Xi**3.5*GHAT**2.5*(GHAT*Xi-3)*10**(What_log) - (7/4)*2.5**5.2/(doL*np.cosh(1/doL)**2)
-    plt.figure('condition')
-    plt.axvline(16.8,color='grey',ls=':')
-    plt.contourf(Nu, What_log, cond(doL),levels=[0.,1e8],cmap="bone")
-    plt.contour(Nu,What_log,cond(doL),levels=[0.,],colors='k')
-    plt.contour(Nu,What_log,cond(0.2),levels=[0.,],colors='C0')
-    plt.contour(Nu,What_log,cond(0.5),levels=[0.,],colors='C1')
-    
-    what_num_log = np.zeros(7)
-    nu_num = np.zeros(7)
-
-    for i,w in enumerate(collmax[doL].keys()):
-        if w>0:
-            what_num_log[i] = np.log10(w)
-            nu_num[i] = collmax[doL][w]
-    lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$\hat{\delta}=1/5$'),
-             mlines.Line2D([], [], color='k', ls = '-', label=r'$\hat{\delta}=1/3$'),
-             mlines.Line2D([], [], color='C1', ls = '-', label=r'$\hat{\delta}=1/2$'),
-             ]
-    plt.legend(handles=lines)
-    plt.scatter(nu_num,what_num_log, s=6,color='w', edgecolor='C2')
-    plt.yticks([-3,-2,-1,0,1],labels=[r'$10^{-3}$',r'$10^{-2}$',r'$10^{-1}$',r'$1$',r'$10$'])
-    plt.xlabel(r'$\nu_\mathrm{ref}$')
-    plt.ylabel(r'$\hat{\omega}$')
-    plt.savefig(saveloc+'condition.eps')
-
-def plot_delta_condition():
-    doL = 10.**np.linspace(-3,0,100)
-    cond = (7/4)*2.5**5.2/(doL*np.cosh(1/doL)**2)
-    plt.figure('delta condition')
-    plt.semilogx(doL,cond)
-    plt.xlabel(r'$\hat{\delta}$')
-    plt.ylabel(r'$(7/4)(5/2)^{5/2} \mathrm{sech}(1/\hat{\delta})^2/\hat{\delta}$')
-    plt.savefig(saveloc+'delta_condition.eps')
-
-
 def plot_doL_scan():
     doL = [0.01, 0.05, 0.1, 0.2, 0.33, 0.5]
     coll_ref = 16.7
@@ -350,17 +289,16 @@ def plot_doL_scan():
     plt.savefig(saveloc+'delta_sensitivity_nu_dN.eps')
 
 if __name__=="__main__":
-    what_arr = [0.,0.05,0.5]
+    doL_arr = [5e-2, 1e-1, 2e-1]
+    lhat = 5
+    what_arr = [0, 1, 1e1]
     #if False:
-    plot_near_SOL(what_arr,doL=0.2)
-    plot_far_SOL(what_arr,doL=0.2)
-    plot_TdF_vs_TuN(what_arr,doL=0.2)
-    plot_coll(what_arr,doL=0.2)
-    plot_nvt(what_arr,doL=0.2)
-    plot_pressure(what_arr,doL=0.2)
-    plot_wall_flux(what_arr,doL=0.2)
-    plot_heat_fluxes(what_arr,doL=0.2)
-    #plot_flux_error(what_arr,doL=0.2)
-    #plot_solvability()
-    #plot_delta_condition()
+    plot_near_SOL(what_arr,doL=0.1)
+    plot_far_SOL(what_arr,doL=0.1)
+    plot_TdF_vs_TuN(what_arr,doL=0.1)
+    plot_coll(what_arr,doL=0.1)
+    plot_nvt(what_arr,doL=0.1)
+    plot_pressure(what_arr,doL=0.1)
+    plot_wall_flux(what_arr,doL=0.1)
+    plot_heat_fluxes(what_arr,doL=0.1)
     #plot_doL_scan()

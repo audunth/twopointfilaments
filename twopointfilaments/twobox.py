@@ -73,7 +73,7 @@ class TBTPW:
             P0 = sy.poly(t**21-z1*(1-z0*e0*t**2)**7+z0*e1*t**16-t**14)
             # Insert numerical values for the variables
             P = P0.subs([
-                (z0, 2.5*self.what*self.doL*self.xi),
+                (z0, 2.5*self.what*(1+self.lhat)*self.doL*self.xi),
                 (z1, (2/(self.ghat*self.xi))**7),
                 (e0, 1-np.exp(-1/self.doL)),
                 (e1, 1-self.doL*(1-np.exp(-1/self.doL))),
@@ -86,8 +86,8 @@ class TBTPW:
             assert (len(positive_roots)==1), (f'Near-SOL does not have a unique solution for TuN. Roots: {[r.evalf() for r in positive_roots]}', -1)
             return float(positive_roots[0].evalf()**2)
         self.TuN = find_TuN()
-        assert (1-2.5*self.what*self.doL*self.xi*self.TuN*(1-np.exp(-1/self.doL))>0), ('Near-SOL sheath dissipation is negative.', -2)
-        self.TdN = (2*(1-2.5*self.what*self.doL*self.xi*self.TuN*(1-np.exp(-1/self.doL)))/(self.ghat*self.xi*self.TuN))**(2) 
+        assert (1-2.5*self.what*(1+self.lhat)*self.doL*self.xi*self.TuN*(1-np.exp(-1/self.doL))>0), ('Near-SOL sheath dissipation is negative.', -2)
+        self.TdN = (2*(1-2.5*self.what*(1+self.lhat)*self.doL*self.xi*self.TuN*(1-np.exp(-1/self.doL)))/(self.ghat*self.xi*self.TuN))**(2) 
         self.ndN = 0.5*self.TuN/self.TdN
         self.nuN = 1.
 
@@ -99,8 +99,8 @@ class TBTPW:
             t, a, b = sy.symbols('t a b')
             P0 = sy.poly(t**7 + a*t**6-b)
             P = P0.subs([
-                (a,5*self.what*self.doL*(1-np.exp(-1./self.doL))/(self.ghat*self.lhat)),
-                (b,(5/14)*self.xi*(self.ghat-3)*self.what*self.doL**2*(1-np.exp(-1./self.doL))**2*np.exp(1./self.doL)*self.TuN/self.ghat)
+                (a,5*self.what*(1+1./self.lhat)*self.doL*(1-np.exp(-1./self.doL))/self.ghat),
+                (b,(5/14)*self.xi*(self.ghat-3)*self.what*(1+self.lhat)*self.doL**2*(1-np.exp(-1./self.doL))**2*np.exp(1./self.doL)*self.TuN/self.ghat)
                 ])
             positive_roots = []
             for r in sy.real_roots(P):
@@ -111,13 +111,17 @@ class TBTPW:
         
         self.TdF = find_TdF()
         self.ndF = 7*np.exp(-1./self.doL)*self.TdF**2/( self.xi*(self.ghat-3)*self.doL*(1-np.exp(-1./self.doL)) )
-        self.nuF = self.lhat*(1.- self.ndF*self.TdF**0.5/(self.what*self.doL*(1.-np.exp(-1./self.doL))))
+        self.nuF = (1.+self.lhat- self.ndF*self.TdF**0.5/(self.what*self.doL*(1.-np.exp(-1./self.doL))))/(1+1./self.lhat)
         assert (self.nuF>0), ('Far-SOL upstream density is negative.',-4)
         assert (self.nuF<self.lhat), ('Far-SOL particle source is negative.',-5)
+        assert (self.nuF<1), ('Far-SOL upstream density is higher than near-SOL', -6)
         self.TuF = 2*self.ndF*self.TdF/self.nuF
-        assert (self.TuN>self.nuF*self.TuF/self.lhat), ('Far-SOL heat source is negative.',-6)
+        assert (self.TuN>self.nuF*self.TuF/self.lhat), ('Far-SOL heat source is negative.',-7)
 
     def get_far_sol_profiles(self, xpoints=100):
+        """
+        Likely bad. 
+        """
         assert self.what>0, "No far SOL for chosen parameters"
         X = np.linspace(0,1,xpoints)[::-1]
 
