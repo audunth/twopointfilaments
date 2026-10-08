@@ -3,6 +3,7 @@ from scipy.integrate import solve_ivp
 from scipy.optimize import root_scalar, minimize
 from twopointfilaments import constants, TwoPoint
 import sympy as sy
+import mpmath as mp
 import warnings
 
 class TBTPW:
@@ -84,6 +85,8 @@ class TBTPW:
                 if r>0:
                     positive_roots.append(r)
             assert (len(positive_roots)==1), (f'Near-SOL does not have a unique solution for TuN. Roots: {[r.evalf() for r in positive_roots]}', -1)
+            if P.subs(t,positive_roots[0])>1e-6:
+                return self._improve_root(P, float(positive_roots[0]))
             return float(positive_roots[0].evalf()**2)
         self.TuN = find_TuN()
         assert (1-2.5*self.what*(1+self.lhat)*self.doL*self.xi*self.TuN*(1-np.exp(-1/self.doL))>0), ('Near-SOL sheath dissipation is negative.', -2)
@@ -107,6 +110,8 @@ class TBTPW:
                 if r>0:
                     positive_roots.append(r)
             assert len(positive_roots)==1, (f'far-SOL does not have a unique solution for TdF. Roots: {[r.evalf() for r in positive_roots]}',-3)
+            if P.subs(t,positive_roots[0])>1e-6:
+                return self._improve_root(P, float(positive_roots[0]))
             return float(positive_roots[0].evalf()**2)
         
         self.TdF = find_TdF()
@@ -142,3 +147,10 @@ class TBTPW:
         n = 2*self.ndF/(res.y[0,:]*(M2(X,res.y[0,:])+1))
 
         return X, n, M, T
+
+
+    def _improve_root(self,Psy, root):
+        # Attempt to improve the found root of the sympy polynomial Psy by numerical iteration
+        P = sy.lambdify(Psy.gens, Psy.as_expr(), modules='mpmath')
+        res = mp.findroot(P,(mp.mpf(0.),mp.mpf(1e7)),solver='bisect',tol=1e-6)
+        return res.root
