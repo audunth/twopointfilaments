@@ -60,13 +60,15 @@ def plot_good():
     for li in range(len(lhat)):
         for dj in range(len(doL)):
             ind = li + len(lhat)*dj
-            plot = ax[ind].pcolormesh(X, Y, data[:,:,li,dj], cmap='cividis', vmin=-7,vmax=0)
+            plot = ax[ind].pcolor(X, Y, data[:,:,li,dj], cmap='cividis', vmin=-8,vmax=0)
             fig.colorbar(plot, ax=ax[ind])
             ax[ind].text(1., 2, rf'$\hat{{\lambda}}={lhat[li]},\, \hat{{\delta}}={doL[dj]}$', bbox={'facecolor':'white'})
             if li == 0:
                 ax[ind].set_ylabel(r'$\log_{10} \hat{\omega}$')
             if dj == len(doL)-1:
                 ax[ind].set_xlabel(r'$\log_{10} \nu_{\mathrm{ref}}$')
+            ax[ind].set_xlim(-1,2)
+            ax[ind].set_ylim([-2,2])
     fig.savefig(saveloc+'good_params.eps')
 
 def compare_near_standard(what_ind):
@@ -103,23 +105,22 @@ def test_vs_ofar_nustar():
         for dj in range(len(doL)):
             ind = li + len(lhat)*dj
             ofar = 10**(Y)/D['TuF'][:,:,li,dj]**0.5
-            #colluN = 10**(X)/D['TuN'][:,:,li,dj]**2
-            #plot = ax[ind].scatter(X, np.log10(ofar), color = mpl.colormaps['cividis'](300))
-            plot = ax[ind].scatter(X, np.log10(ofar), c = Y, cmap = 'cividis')
-            #plot = ax[ind].pcolor(X, np.log10(ofar), (D['TdN'][:,:,li,dj]/D['TuN'][:,:,li,dj]), cmap='cividis')
+            #colluF = 10**(X)*D['nuF'][:,:,li,dj]/D['TuF'][:,:,li,dj]**2
+            #plot = ax[ind].scatter(np.log10(colluF), np.log10(ofar), color = mpl.colormaps['cividis'](300))
+            plot = ax[ind].pcolor(X, np.log10(ofar), Y, cmap = 'cividis')
+            ax[ind].axhline(np.log10(0.1), c='k')
+            ax[ind].axhline(np.log10(1.), c='grey')
             fig.colorbar(plot, ax=ax[ind])
             ax[ind].text(0.62, 0.1, rf'$\hat{{\lambda}}={lhat[li]},\, \hat{{\delta}}={doL[dj]}$', bbox={'facecolor':'white'}, transform=ax[ind].transAxes)
-            if li == 0:
-                ax[ind].set_ylabel(r'$\log_{10} \hat{\omega}/\sqrt{T_\mathrm{u,F}}$')
-            if dj == len(doL)-1:
-                ax[ind].set_xlabel(r'$\log_{10} \nu_{\mathrm{u,N}}$')
+            ax[ind].set_xlim(-1,2)
+            ax[ind].set_ylim([-2,2])
+            ax[ind].set_ylabel(r'$\log_{10} \hat{\omega}/\sqrt{T_\mathrm{u,F}}$')
+            ax[ind].set_xlabel(r'$\log_{10} \nu_{\mathrm{ref}}$')
                 #ax[ind].plot(np.log10(colluN), -0.33*np.log10(colluN), 'k')
             #if dj == len(doL)-2:
             #ax[ind].plot(np.log10(coll),0.0 -0.66*np.log10(coll), 'r')
-            #ax[ind].set_xlim(0,2)
-            #ax[ind].set_ylim([-3,2])
 
-    fig.savefig(saveloc+'test_ofar.eps')
+    fig.savefig(saveloc+'ofar_coll_ref.eps')
 
 def make_fig_ofar():
     D = np.load(dataloc+'TBTPW_scan.npz')
