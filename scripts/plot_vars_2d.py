@@ -67,8 +67,8 @@ def plot_good():
                 ax[ind].set_ylabel(r'$\log_{10} \hat{\omega}$')
             if dj == len(doL)-1:
                 ax[ind].set_xlabel(r'$\log_{10} \nu_{\mathrm{ref}}$')
-            ax[ind].set_xlim(-1,2)
-            ax[ind].set_ylim([-2,2])
+            #ax[ind].set_xlim(-1,2)
+            #ax[ind].set_ylim([-2,2])
     fig.savefig(saveloc+'good_params.eps')
 
 def compare_near_standard(what_ind):
@@ -113,8 +113,8 @@ def test_vs_ofar_nustar():
             ax[ind].plot(np.log10(coll), -0.3-0.5*np.log10(coll))
             fig.colorbar(plot, ax=ax[ind])
             ax[ind].text(0.62, 0.1, rf'$\hat{{\lambda}}={lhat[li]},\, \hat{{\delta}}={doL[dj]}$', bbox={'facecolor':'white'}, transform=ax[ind].transAxes)
-            ax[ind].set_xlim(-1,2)
-            ax[ind].set_ylim([-2,2])
+            #ax[ind].set_xlim(-1,2)
+            #ax[ind].set_ylim([-2,2])
             ax[ind].set_ylabel(r'$\log_{10} \hat{\omega}/\sqrt{T_\mathrm{u,F}}$')
             ax[ind].set_xlabel(r'$\log_{10} \nu_{\mathrm{ref}}$')
                 #ax[ind].plot(np.log10(colluN), -0.33*np.log10(colluN), 'k')
