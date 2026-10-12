@@ -110,6 +110,7 @@ def test_vs_ofar_nustar():
             plot = ax[ind].pcolor(X, np.log10(ofar), Y, cmap = 'cividis')
             ax[ind].axhline(np.log10(0.1), c='k')
             ax[ind].axhline(np.log10(1.), c='grey')
+            ax[ind].plot(np.log10(coll), -0.3-0.5*np.log10(coll))
             fig.colorbar(plot, ax=ax[ind])
             ax[ind].text(0.62, 0.1, rf'$\hat{{\lambda}}={lhat[li]},\, \hat{{\delta}}={doL[dj]}$', bbox={'facecolor':'white'}, transform=ax[ind].transAxes)
             ax[ind].set_xlim(-1,2)

@@ -63,8 +63,8 @@ class TBTPW:
         # The three near-SOL equations combined give for the upstream temperature:
         def find_TuN():
             '''
-            Uses mpmath to find the root of the polynomial for t=T_uN^0.5. 
-            With count_roots, we ensure there is only one positive real root.
+            Uses mpmath to find the root of the polynomial P for t=T_uN^0.5. 
+            We find the root of P(t)/t^14 instead, since this function has a unique simple root for positive t.
 
             The variables z0, z1, e0, e1 are collections of model parameters as defined below.
             '''
@@ -74,30 +74,14 @@ class TBTPW:
             E0=1-mp.exp(-1/self.doL)
             E1=1-self.doL*(1-mp.exp(-1/self.doL))
 
-            pol = lambda t:t**21-Z1*(1-Z0*E0*t**2)**7+Z0*E1*t**16-t**14
-            dpol = lambda t: 21*t**20-Z1*7*(1-Z0*E0*t**2)**6*(-2*Z0*E0*t)+16*Z0*E1*t**15-14*t**13
-            d2pol = lambda t: 21*20*t**19-Z1*7*( 6*(1-Z0*E0*t**2)**5*(-2*Z0*E0*t)**2 + (1-Z0*E0*t**2)**6*(-2*Z0*E0) )+16*15*Z0*E1*t**14-14*13*t**12
-            t, z0, z1, e0, e1 = sy.symbols('t, z0, z1, e0, e1')
-            P0 = sy.poly(t**21-z1*(1-z0*e0*t**2)**7+z0*e1*t**16-t**14)
-            P = P0.subs([
-                (z0,Z0),
-                (z1,Z1),
-                (e0,E0),
-                (e1,E1),
-                ])
-            positive_roots = []
-            for r in sy.real_roots(P):
-                if r>0:
-                    positive_roots.append(r)
-            assert len(positive_roots)==1, (f'far-SOL does not have a unique solution for TdF. Roots: {[r.evalf() for r in positive_roots]}',-3)
+            f = lambda t:t**7-Z1*(t**(-2)-Z0*E0)**7+Z0*E1*t**2-1
+            df = lambda t: 7*t**6+14*Z1*t**(-3)*(t**(-2)-Z0*E0)**6+2*Z0*E1*t
+            d2f = lambda t: 42*t**5-42*Z1*t**(-4)*(5*t**(-2)-Z0*E0)(t**(-2)-Z0*E0)**5+2*Z0*E1
             try:
-                res = mp.findroot(pol,positive_roots[0].evalf(),solver='mnewton',df=dpol, d2f=d2pol, tol=1e-6, maxsteps=1000)
-                diff = np.abs(res-positive_roots[0].evalf())/positive_roots[0].evalf()
-                if diff>1e-2:
-                    print(diff)
+                res = mp.findroot(f,1,solver='halley',df=df, d2f=d2f, tol=1e-6, maxsteps=1000)
                 return res**2
             except ValueError:
-                assert False, ('Root not numerically verified',-8)
+                assert False, ('Root not numerically verified',-3)
 
         self.TuN = find_TuN()
         assert (1-2.5*self.what*(1+self.lhat)*self.doL*self.xi*self.TuN*(1-mp.exp(-1/self.doL))>0), ('Near-SOL sheath dissipation is negative.', -2)
@@ -110,20 +94,18 @@ class TBTPW:
             """
             See find_TuN. Same principle.
             """
-            t, a, b = sy.symbols('t a b')
-            P0 = sy.poly(t**7 + a*t**6-b)
-            P = P0.subs([
-                (a,5*self.what*(1+1./self.lhat)*self.doL*(1-mp.exp(-1./self.doL))/self.ghat),
-                (b,(5/14)*self.xi*(self.ghat-3)*self.what*(1+self.lhat)*self.doL**2*(1-mp.exp(-1./self.doL))**2*mp.exp(1./self.doL)*self.TuN/self.ghat)
-                ])
-            positive_roots = []
-            for r in sy.real_roots(P):
-                if r>0:
-                    positive_roots.append(r)
-            assert len(positive_roots)==1, (f'far-SOL does not have a unique solution for TdF. Roots: {[r.evalf() for r in positive_roots]}',-3)
-            if P.subs(t,positive_roots[0])>1e-6:
-                return self._improve_root(P, float(positive_roots[0]))
-            return float(positive_roots[0].evalf()**2)
+            # Define constants
+            A=5*self.what*(1+1./self.lhat)*self.doL*(1-mp.exp(-1./self.doL))/self.ghat
+            B=(5/14)*self.xi*(self.ghat-3)*self.what*(1+self.lhat)*self.doL**2*(1-mp.exp(-1./self.doL))**2*mp.exp(1./self.doL)*self.TuN/self.ghat
+
+            f = lambda t:t**7 + A*t**6-B
+            df = lambda t: 7*t**6 + 6*A*t**5
+            d2f = lambda t: 42*t**5 + 30*A*t**4
+            try:
+                res = mp.findroot(f,1,solver='halley',df=df, d2f=d2f, tol=1e-6, maxsteps=1000)
+                return res**2
+            except ValueError:
+                assert False, ('Root not numerically verified',-3)
         
         self.TdF = find_TdF()
         self.ndF = 7*mp.exp(-1./self.doL)*self.TdF**2/( self.xi*(self.ghat-3)*self.doL*(1-mp.exp(-1./self.doL)) )
@@ -158,10 +140,3 @@ class TBTPW:
         n = 2*self.ndF/(res.y[0,:]*(M2(X,res.y[0,:])+1))
 
         return X, n, M, T
-
-
-    def _improve_root(self,Psy, root):
-        # Attempt to improve the found root of the sympy polynomial Psy by numerical iteration
-        P = sy.lambdify(Psy.gens, Psy.as_expr(), modules='mpmath')
-        res = mp.findroot(P,(mp.mpf(0.),mp.mpf(1e7)),solver='bisect',tol=1e-6)
-        return res.root

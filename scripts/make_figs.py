@@ -97,7 +97,7 @@ class Plot:
             good = lambda data, wk, li, dj: data[:,:,li,dj][self.what_uF_good_ind[wk][:,:,li,dj]]
             C = lambda wk, li, dj: np.stack((self.coll,)*len(self.what),axis=1)[self.what_uF_good_ind[wk][:,:,li,dj]]
             def plot(Ax, X, Y, col, styleind, label=None):
-                Ax.scatter(X, Y, c=col, marker=symbstyle[styleind], label=label)
+                Ax.plot(X, Y, c=col, ls=linestyle[styleind], label=label)
             fname = '_what_uF'
         else:
             C = lambda wk, li, dj: self.coll
@@ -138,14 +138,14 @@ class Plot:
 
                 if truncated:
                     ax[ind].text(0.1, 0.1, r'$\mathrm{I}$',transform = ax[ind].transAxes)
-                    ax[ind].text(0.9, 0.9, r'$\mathrm{IV}$', transform = ax[ind].transAxes)
+                    ax[ind].text(0.9, 0.7, r'$\mathrm{IV}$', transform = ax[ind].transAxes)
                     if li==0:
-                        ax[ind].text(0.5, 0.6, r'$\mathrm{II}$',transform = ax[ind].transAxes)
+                        ax[ind].text(0.55, 0.55, r'$\mathrm{II}$',transform = ax[ind].transAxes)
                     if ind==1:
-                        ax[ind].text(0.4, 0.4, r'$\mathrm{II}$',transform = ax[ind].transAxes)
-                        ax[ind].text(0.6, 0.6, r'$\mathrm{III}$', c = 'white',transform = ax[ind].transAxes)
+                        ax[ind].text(0.6, 0.35, r'$\mathrm{II}$',transform = ax[ind].transAxes)
+                        ax[ind].text(0.55, 0.55, r'$\mathrm{III}$', c = 'white',transform = ax[ind].transAxes)
                     if ind==3:
-                        ax[ind].text(0.5, 0.55, r'$\mathrm{II}$',transform = ax[ind].transAxes)
+                        ax[ind].text(0.7, 0.42, r'$\mathrm{II}$',transform = ax[ind].transAxes)
                         ax[ind].text(0.05, 0.75, r'$\mathrm{III}$',c='white',transform = ax[ind].transAxes)
 
         fig.savefig(saveloc+'good_params'+fname+'.eps')
@@ -158,16 +158,18 @@ class Plot:
         for li in range(len(self.lhat)):
             for dj in range(len(self.doL)):
                 ind = li + len(self.lhat)*dj
-                ax[ind].scatter(X, np.log10(self.what_uF[:,:,li,dj]), color=mpl.colormaps['cividis'](300))
+                ax[ind].pcolor(X, np.log10(self.what_uF[:,:,li,dj]), np.ones_like(X), cmap = 'cividis', vmin=0, vmax=1)
                 ax[ind].text(0.62, 0.1, rf'$\hat{{\lambda}}={self.lhat[li]},\, \hat{{\delta}}={self.doL[dj]}$', bbox={'facecolor':'white'},
                              transform = ax[ind].transAxes)
+                for kk, wj in enumerate(self.what_ind):
+                    ax[ind].axhline(np.log10(self.what[wj]), c='k', ls = linestyle[kk])
                 if li == 0:
                     ax[ind].set_ylabel(r'$\log_{10} \hat{\omega}$')
                 if dj == len(self.doL)-1:
                     ax[ind].set_xlabel(r'$\log_{10} \nu_{\mathrm{ref}}$')
-
+                
                 #ax[ind].set_xlim(0,2)
-                #ax[ind].set_ylim(-3,2)
+                ax[ind].set_ylim(-2,2)
         fig.savefig(saveloc+'good_params_ofar.eps')
 
     def plot_near_SOL(self, what_uF=False):
@@ -192,7 +194,7 @@ class Plot:
                         ax[ind].set_xlabel(r'$\nu_{\mathrm{ref}}$')
 
                     ax[ind].set_xlim(self.coll[0],self.coll[-1])
-                    #ax[ind].set_ylim(0,4)
+                    #ax[ind].set_ylim(-2,2)
                 ax[ind].legend()
         fig.savefig(saveloc+'near'+fname+'.eps')
 
@@ -204,8 +206,8 @@ class Plot:
                 ind = li + len(self.lhat)*dj
                 cosmoplots.change_log_axis_base(ax[ind],)
                 for styleind, wk in enumerate(self.what_ind):
-                    plot(ax[ind], C(wk,li,dj), good(self.ndF/self.nuF,wk,li,dj), 'C0',styleind)
-                    plot(ax[ind], C(wk,li,dj), good(self.TdF/self.TuF,wk,li,dj), 'C1',styleind)
+                    plot(ax[ind], C(wk,li,dj), np.log10(good(self.ndF/self.nuF,wk,li,dj)), 'C0',styleind)
+                    plot(ax[ind], C(wk,li,dj), np.log10(good(self.TdF/self.TuF,wk,li,dj)), 'C1',styleind)
                     #plt.plot(Data['coll'], Data['TuF']/Data['TuN'], 'C2'+ls)
                     #plt.plot(Data['coll'], Data['nuF'], 'C3'+ls)
 
@@ -225,66 +227,38 @@ class Plot:
 
         fig.savefig(saveloc+'far'+fname+'.eps')
 
-    def plot_far_SOL_what_uF(self):
-        fig, ax = cosmoplots.figure_multiple_rows_columns(len(self.doL),len(self.lhat))
-        for li in range(len(self.lhat)):
-            for dj in range(len(self.doL)):
-                ind = li + len(self.lhat)*dj
-                for wk, w in enumerate(self.what_uF_good_ind.keys()):
-                    C = np.stack((self.coll,)*len(self.what),axis=0)[self.what_uF_good_ind[w][:,:,li,dj]]
-                    good = self.what_uF_good_ind[w][:,:,li,dj]
-                    ax[ind].scatter(C, self.ndF[:,:,li,dj][good]/self.nuF[:,:,li,dj][good], c='C0', marker=symbstyle[wk])
-                    ax[ind].scatter(C, self.TdF[:,:,li,dj][good]/self.TuF[:,:,li,dj][good], c='C1', marker=symbstyle[wk])
-                    #plt.plot(Data['coll'], Data['TuF']/Data['TuN'], 'C2'+ls)
-                    #plt.plot(Data['coll'], Data['nuF'], 'C3'+ls)
-
-                    ax[ind].text(0.62, 0.1, rf'$\hat{{\lambda}}={self.lhat[li]},\, \hat{{\delta}}={self.doL[dj]}$', bbox={'facecolor':'white'},
-                                 transform = ax[ind].transAxes)
-
-                    if dj == len(self.doL)-1:
-                        ax[ind].set_xlabel(r'$\nu_{\mathrm{ref}}$')
-
-                    ax[ind].set_xlim(self.coll[0],self.coll[-1])
-                    #ax[ind].set_ylim(0,4)
-                lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$n_\mathrm{d,F}/n_\mathrm{u,F}$'),
-                         mlines.Line2D([], [], color='C1', ls = '-', label=r'$T_\mathrm{d,F}/T_\mathrm{u,F}$')]
-                         #mlines.Line2D([], [], color='C2', ls = '-', label=r'$T_\mathrm{u,F}/T_\mathrm{u,N}$'),
-                         #mlines.Line2D([], [], color='C3', ls = '-', label=r'$n_\mathrm{u,F}/n_\mathrm{u,N}$')]
-                ax[ind].legend(handles=lines)
-
-        fig.savefig(saveloc+'far_coll_what.eps')
-
-    def plot_coll(self):
+    def plot_coll(self,what_uF=False):
         fig, ax = cosmoplots.figure_multiple_rows_columns(len(self.doL),len(self.lhat))
         lines = [mlines.Line2D([], [], color='C0', ls = '-', label=r'$\mathrm{u,N}$'),
                  mlines.Line2D([], [], color='C1', ls = '-', label=r'$\mathrm{d,N}$'),
                  mlines.Line2D([], [], color='C2', ls = '-', label=r'$\mathrm{u,F}$'),
                  mlines.Line2D([], [], color='C3', ls = '-', label=r'$\mathrm{d,F}$'),
                  mlines.Line2D([], [], color='k', ls = '-.', label=r'$\mathrm{ref}$')]
+        C, good, plot, fname = self._get_plot_params(what_uF)
         for li in range(len(self.lhat)):
             for dj in range(len(self.doL)):
                 ind = li + len(self.lhat)*dj
-                ax[ind].loglog(self.coll, self.coll, 'k')
-                ax[ind].loglog(self.coll, self.coll/self.standard_twopoint['TuN']**2, 'C0')
+                cosmoplots.change_log_axis_base(ax[ind],'y')
+                ax[ind].plot(self.coll, self.coll, 'k')
+                ax[ind].plot(self.coll, self.coll/self.standard_twopoint['TuN']**2, 'C0')
                 ax[ind].plot(self.coll, self.coll*self.standard_twopoint['ndN']/self.standard_twopoint['TdN']**2, 'C1')
-                for wk, w in enumerate(self.what):
-                    ax[ind].plot(self.coll, self.coll*self.nuF[:,wk,li,dj]/self.TuF[:,wk,li,dj]**2, 'C2'+linestyle[wk])
-                    ax[ind].plot(self.coll, self.coll*self.ndF[:,wk,li,dj]/self.TdF[:,wk,li,dj]**2, 'C3'+linestyle[wk])
+                for styleind, wk in enumerate(self.what_ind):
+                    plot(ax[ind], C(wk,li,dj), (C(wk,li,dj)*good(1./self.TuN**2,wk,li,dj)), 'C0',styleind)
+                    plot(ax[ind], C(wk,li,dj), (C(wk,li,dj)*good(self.ndN/self.TdN**2,wk,li,dj)), 'C1',styleind)
+                    plot(ax[ind], C(wk,li,dj), (C(wk,li,dj)*good(self.nuF/self.TuF**2,wk,li,dj)), 'C2',styleind)
+                    plot(ax[ind], C(wk,li,dj), (C(wk,li,dj)*good(self.ndF/self.TdF**2,wk,li,dj)), 'C3',styleind)
 
                 ax[ind].text(0.62, 0.1, rf'$\hat{{\lambda}}={self.lhat[li]},\, \hat{{\delta}}={self.doL[dj]}$', bbox={'facecolor':'white'},
                              transform = ax[ind].transAxes)
 
-                if dj == len(self.doL)-1:
-                    ax[ind].set_xlabel(r'$\nu_{\mathrm{ref}}$')
-                if li == 0:
-                    ax[ind].set_ylabel(r'$\nu$')
+                ax[ind].set_xlabel(r'$\nu_{\mathrm{ref}}$')
+                ax[ind].set_ylabel(r'$\nu$')
 
                 ax[ind].set_xlim(self.coll[0],self.coll[-1])
+                ax[ind].set_ylim(1e-3,1e3)
                 ax[ind].legend(handles=lines)
-        #cosmoplots.change_log_axis_base(ax, base=10)
-        #plt.xlim(1,32)
-        #plt.ylim(0,4)
-        fig.savefig(saveloc+'coll.eps')
+
+        fig.savefig(saveloc+'coll'+fname+'.eps')
 
 def plot_near_SOL(what_arr, doL=0.33):
     plt.figure('near sol')
@@ -555,19 +529,20 @@ def plot_doL_scan():
     plt.savefig(saveloc+'delta_sensitivity_nu_dN.eps')
 
 if __name__=="__main__":
-    what_vals = [0.1, 1.]
+    what_vals = [0.2, 1.]
     lhat_vals = [1., 2.]
     doL_vals = [0.1,0.2]
     P = Plot(lhat_vals=lhat_vals, doL_vals=doL_vals)
     P.find_what_uF_indices(what_vals=what_vals)
-    P.plot_good_params_what_uF()
+    #P.plot_good_params_what_uF()
     #P.plot_good_params(truncated=False)
     #P.plot_good_params(truncated=True)
-    P.plot_near_SOL(what_uF=False)
-    P.plot_near_SOL(what_uF=True)
-    P.plot_far_SOL(what_uF=False)
-    P.plot_far_SOL(what_uF=True)
-    #P.plot_coll()
+    #P.plot_near_SOL(what_uF=False)
+    #P.plot_near_SOL(what_uF=True)
+    #P.plot_far_SOL(what_uF=False)
+    #P.plot_far_SOL(what_uF=True)
+    P.plot_coll(what_uF=False)
+    P.plot_coll(what_uF=True)
     #P.compare_what_ref_uF_near()
 
     if False:
