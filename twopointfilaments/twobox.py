@@ -1,8 +1,6 @@
 import numpy as np
 from scipy.integrate import solve_ivp
-from scipy.optimize import root_scalar, minimize
 from twopointfilaments import constants, TwoPoint
-import sympy as sy
 import mpmath as mp
 import warnings
 
