@@ -1,7 +1,8 @@
 import numpy as np
 from scipy.integrate import solve_ivp
-from scipy.optimize import root_scalar, minimize
-from twopointfilaments import constants
+from twopointfilaments import constants, TwoPoint
+import mpmath as mp
+import warnings
 
 class TBTPW:
     """
@@ -17,25 +18,106 @@ class TBTPW:
         tau: Ion to electron temperature ratio. 
         ion_species: Default to deuterium.
         doL: normalized parallel ballooning length.
+        lhat: far-SOL width divided by near-SOL width.
     """
-    def __init__(self,coll,what,gamma=7,tau=1,ion_species='deuterium',doL=0.33):
-        self.coll = coll
-        self.xi = constants.xi_factor(tau,ion_species)*coll
-        self.what = what
-        self.ghat = gamma/(1+tau)
-        self.doL = doL
+    def __init__(self,coll,what,gamma=7,tau=1,ion_species='deuterium',doL=0.33,lhat=5):
+        self.coll = mp.mpf(coll)
+        self.xi = mp.mpf(constants.xi_factor(tau,ion_species)*coll)
+        self.what = mp.mpf(what)
+        self.ghat = mp.mpf(gamma/(1+tau))
+        self.doL = mp.mpf(doL)
+        self.lhat = mp.mpf(lhat)
+        self.status = np.nan
+        self.message = ''
 
-        self._calculate_near_sol()
+        self.ndN=np.nan
+        self.TuN=np.nan
+        self.TdN=np.nan
+
+        self.nuF=np.nan
+        self.ndF=np.nan
+        self.TuF=np.nan
+        self.TdF=np.nan
+
 
         if what>0:
-            self._calculate_far_sol()
+            try:
+                self._calculate_near_sol()
+                self._calculate_far_sol()
+                self.status = 0
+            except AssertionError as e:
+                self.message = e.args[0][0]
+                self.status = e.args[0][1]
+
         else:
-            self.nuF=np.nan
-            self.ndF=np.nan
-            self.TuF=np.nan
-            self.TdF=np.nan
+            TP = TwoPoint(coll, gamma, tau, ion_species)
+            self.nuN = 1
+            self.ndN = TP.ndN
+            self.TuN = TP.TuN
+            self.TdN = TP.TdN
+            self.status = 0
+
+    def _calculate_near_sol(self):
+        # The three near-SOL equations combined give for the upstream temperature:
+        def find_TuN():
+            '''
+            Uses mpmath to find the root of the polynomial P for t=T_uN^0.5. 
+            We find the root of P(t)/t^14 instead, since this function has a unique simple root for positive t.
+
+            The variables z0, z1, e0, e1 are collections of model parameters as defined below.
+            '''
+            # Define constants
+            Z0=2.5*self.what*(1+self.lhat)*self.doL*self.xi
+            Z1=(2/(self.ghat*self.xi))**7
+            E0=1-mp.exp(-1/self.doL)
+            E1=1-self.doL*(1-mp.exp(-1/self.doL))
+
+            f = lambda t:t**7-Z1*(t**(-2)-Z0*E0)**7+Z0*E1*t**2-1
+            df = lambda t: 7*t**6+14*Z1*t**(-3)*(t**(-2)-Z0*E0)**6+2*Z0*E1*t
+            d2f = lambda t: 42*t**5-42*Z1*t**(-4)*(5*t**(-2)-Z0*E0)(t**(-2)-Z0*E0)**5+2*Z0*E1
+            try:
+                res = mp.findroot(f,1,solver='halley',df=df, d2f=d2f, tol=1e-6, maxsteps=1000)
+                return res**2
+            except ValueError:
+                assert False, ('Root not numerically verified',-3)
+
+        self.TuN = find_TuN()
+        assert (1-2.5*self.what*(1+self.lhat)*self.doL*self.xi*self.TuN*(1-mp.exp(-1/self.doL))>0), ('Near-SOL sheath dissipation is negative.', -2)
+        self.TdN = (2*(1-2.5*self.what*(1+self.lhat)*self.doL*self.xi*self.TuN*(1-mp.exp(-1/self.doL)))/(self.ghat*self.xi*self.TuN))**(2) 
+        self.ndN = 0.5*self.TuN/self.TdN
+        self.nuN = 1.
+
+    def _calculate_far_sol(self):
+        def find_TdF():
+            """
+            See find_TuN. Same principle.
+            """
+            # Define constants
+            A=5*self.what*(1+1./self.lhat)*self.doL*(1-mp.exp(-1./self.doL))/self.ghat
+            B=(5/14)*self.xi*(self.ghat-3)*self.what*(1+self.lhat)*self.doL**2*(1-mp.exp(-1./self.doL))**2*mp.exp(1./self.doL)*self.TuN/self.ghat
+
+            f = lambda t:t**7 + A*t**6-B
+            df = lambda t: 7*t**6 + 6*A*t**5
+            d2f = lambda t: 42*t**5 + 30*A*t**4
+            try:
+                res = mp.findroot(f,1,solver='halley',df=df, d2f=d2f, tol=1e-6, maxsteps=1000)
+                return res**2
+            except ValueError:
+                assert False, ('Root not numerically verified',-3)
+        
+        self.TdF = find_TdF()
+        self.ndF = 7*mp.exp(-1./self.doL)*self.TdF**2/( self.xi*(self.ghat-3)*self.doL*(1-mp.exp(-1./self.doL)) )
+        self.nuF = (1.+self.lhat- self.ndF*self.TdF**0.5/(self.what*self.doL*(1.-mp.exp(-1./self.doL))))/(1+1./self.lhat)
+        assert (self.nuF>0), ('Far-SOL upstream density is negative.',-4)
+        assert (self.nuF<self.lhat), ('Far-SOL particle source is negative.',-5)
+        assert (self.nuF<1), ('Far-SOL upstream density is higher than near-SOL', -6)
+        self.TuF = 2*self.ndF*self.TdF/self.nuF
+        assert (self.TuN>self.nuF*self.TuF/self.lhat), ('Far-SOL heat source is negative.',-7)
 
     def get_far_sol_profiles(self, xpoints=100):
+        """
+        Likely bad. 
+        """
         assert self.what>0, "No far SOL for chosen parameters"
         X = np.linspace(0,1,xpoints)[::-1]
 
@@ -53,68 +135,6 @@ class TBTPW:
         print(res)
         T = res.y[0,:]*self.TdF
         M = np.sqrt(M2(X,res.y[0,:]))
-        n = 2*self.ndF/(np.sqrt(res.y[0,:])*(M2(X,res.y[0,:])+1))
+        n = 2*self.ndF/(res.y[0,:]*(M2(X,res.y[0,:])+1))
 
         return X, n, M, T
-
-    def _calculate_near_sol(self):
-        # The three equations combined give for the upstream temperature:
-        def g(TuN):
-            z0 = 2.5*self.what*self.doL*self.xi*TuN
-            e0 = 1-np.exp(-1/self.doL)
-            e1 = 1-self.doL*e0
-            
-            return TuN**3.5-(2*(1-z0*e0)/(self.ghat*self.xi*TuN))**(7) - 1 + z0*e1
-
-        res = root_scalar(g,bracket=(1e-5,1e5),x0=1)
-        self.TuN = res.root
-        self.TdN = (2*(1-2.5*self.what*self.doL*self.xi*self.TuN*(1-np.exp(-1/self.doL)))/(self.ghat*self.xi*self.TuN))**(2) 
-        self.ndN = 0.5*self.TuN/self.TdN
-        self.nuN = 1.
-
-
-
-    def _calculate_far_sol(self, x0=1.1):
-        theta = self._optimize_TuF(x0).x[0]
-        self.ndF, self.TdF = self._ndF_TdF(theta)
-        self.TuF = theta*self.TdF
-        self.nuF = 2*self.ndF/theta
-
-    def _ndF_TdF(self,theta):
-        # Returns ndF and TdF for given theta=TuF/TdF
-
-        a = self.what*self.doL*(1-np.exp(-1./self.doL))
-        c = 2.5*a/(self.ghat)
-        b = c*self.TuN
-
-        # Canclulate sqrt(TdF)
-        P = np.polynomial.Polynomial([-2*b/theta, -b/a, 2*c, 1.])
-        roots = P.roots()
-        good0 = np.isreal(roots)
-        good1 = roots[good0]>0
-
-        TdFsq = np.real(roots[good0][good1])
-        assert len(TdFsq)==1, 'Too many positive TdF roots'
-        TdF = TdFsq[0]**2
-        ndF = a/(TdFsq[0]+2*a/theta)
-
-        return ndF, TdF
-
-    def _optimize_TuF(self,x0):
-        def f(x):
-            return (1-np.exp(-x/self.doL))/(1-np.exp(-1./self.doL))
-        def M2(x,T):
-            # T is T(x,F)/TdF
-            return (1-(1-T*f(x)**2)**0.5)/(1+(1-T*f(x)**2)**0.5)
-            
-        def diffq(x,T,ndF,TdF):
-            c = 2*self.xi*ndF / (7*TdF**2)
-            return c*T**(-2.5)*f(x) * (0.5*T*(5+M2(x,T)) - self.ghat)
-            
-        def fitfun(theta):
-            ndF, TdF = self._ndF_TdF(theta[0])
-            res=solve_ivp(diffq, [1.,0.], [1.,], args=(ndF, TdF))
-            assert res.success, f'Did not find a solution to the energy equation, coll={self.coll}, what={self.what}'
-            return np.abs(theta-res.y[0,-1])
-
-        return minimize(fitfun, x0, bounds=((1e-1,10.),))
