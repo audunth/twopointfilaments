@@ -1,8 +1,7 @@
 import numpy as np
 from scipy.integrate import solve_ivp
-from scipy.optimize import root_scalar, minimize
 from twopointfilaments import constants, TwoPoint
-import sympy as sy
+import mpmath as mp
 import warnings
 
 class TBTPW:
@@ -22,12 +21,12 @@ class TBTPW:
         lhat: far-SOL width divided by near-SOL width.
     """
     def __init__(self,coll,what,gamma=7,tau=1,ion_species='deuterium',doL=0.33,lhat=5):
-        self.coll = coll
-        self.xi = constants.xi_factor(tau,ion_species)*coll
-        self.what = what
-        self.ghat = gamma/(1+tau)
-        self.doL = doL
-        self.lhat = lhat
+        self.coll = mp.mpf(coll)
+        self.xi = mp.mpf(constants.xi_factor(tau,ion_species)*coll)
+        self.what = mp.mpf(what)
+        self.ghat = mp.mpf(gamma/(1+tau))
+        self.doL = mp.mpf(doL)
+        self.lhat = mp.mpf(lhat)
         self.status = np.nan
         self.message = ''
 
@@ -62,32 +61,29 @@ class TBTPW:
         # The three near-SOL equations combined give for the upstream temperature:
         def find_TuN():
             '''
-            Uses sympy to find the root of the polynomial for t=T_uN^0.5. 
-            With count_roots, we ensure there is only one positive real root.
+            Uses mpmath to find the root of the polynomial P for t=T_uN^0.5. 
+            We find the root of P(t)/t^14 instead, since this function has a unique simple root for positive t.
 
             The variables z0, z1, e0, e1 are collections of model parameters as defined below.
             '''
-            t, z0, z1, e0, e1 = sy.symbols('t z0 z1 e0 e1')
-            
-            # Define polynomial
-            P0 = sy.poly(t**21-z1*(1-z0*e0*t**2)**7+z0*e1*t**16-t**14)
-            # Insert numerical values for the variables
-            P = P0.subs([
-                (z0, 2.5*self.what*(1+self.lhat)*self.doL*self.xi),
-                (z1, (2/(self.ghat*self.xi))**7),
-                (e0, 1-np.exp(-1/self.doL)),
-                (e1, 1-self.doL*(1-np.exp(-1/self.doL))),
-                ])
-            
-            positive_roots = []
-            for r in sy.real_roots(P):
-                if r>0:
-                    positive_roots.append(r)
-            assert (len(positive_roots)==1), (f'Near-SOL does not have a unique solution for TuN. Roots: {[r.evalf() for r in positive_roots]}', -1)
-            return float(positive_roots[0].evalf()**2)
+            # Define constants
+            Z0=2.5*self.what*(1+self.lhat)*self.doL*self.xi
+            Z1=(2/(self.ghat*self.xi))**7
+            E0=1-mp.exp(-1/self.doL)
+            E1=1-self.doL*(1-mp.exp(-1/self.doL))
+
+            f = lambda t:t**7-Z1*(t**(-2)-Z0*E0)**7+Z0*E1*t**2-1
+            df = lambda t: 7*t**6+14*Z1*t**(-3)*(t**(-2)-Z0*E0)**6+2*Z0*E1*t
+            d2f = lambda t: 42*t**5-42*Z1*t**(-4)*(5*t**(-2)-Z0*E0)(t**(-2)-Z0*E0)**5+2*Z0*E1
+            try:
+                res = mp.findroot(f,1,solver='halley',df=df, d2f=d2f, tol=1e-6, maxsteps=1000)
+                return res**2
+            except ValueError:
+                assert False, ('Root not numerically verified',-3)
+
         self.TuN = find_TuN()
-        assert (1-2.5*self.what*(1+self.lhat)*self.doL*self.xi*self.TuN*(1-np.exp(-1/self.doL))>0), ('Near-SOL sheath dissipation is negative.', -2)
-        self.TdN = (2*(1-2.5*self.what*(1+self.lhat)*self.doL*self.xi*self.TuN*(1-np.exp(-1/self.doL)))/(self.ghat*self.xi*self.TuN))**(2) 
+        assert (1-2.5*self.what*(1+self.lhat)*self.doL*self.xi*self.TuN*(1-mp.exp(-1/self.doL))>0), ('Near-SOL sheath dissipation is negative.', -2)
+        self.TdN = (2*(1-2.5*self.what*(1+self.lhat)*self.doL*self.xi*self.TuN*(1-mp.exp(-1/self.doL)))/(self.ghat*self.xi*self.TuN))**(2) 
         self.ndN = 0.5*self.TuN/self.TdN
         self.nuN = 1.
 
@@ -96,22 +92,22 @@ class TBTPW:
             """
             See find_TuN. Same principle.
             """
-            t, a, b = sy.symbols('t a b')
-            P0 = sy.poly(t**7 + a*t**6-b)
-            P = P0.subs([
-                (a,5*self.what*(1+1./self.lhat)*self.doL*(1-np.exp(-1./self.doL))/self.ghat),
-                (b,(5/14)*self.xi*(self.ghat-3)*self.what*(1+self.lhat)*self.doL**2*(1-np.exp(-1./self.doL))**2*np.exp(1./self.doL)*self.TuN/self.ghat)
-                ])
-            positive_roots = []
-            for r in sy.real_roots(P):
-                if r>0:
-                    positive_roots.append(r)
-            assert len(positive_roots)==1, (f'far-SOL does not have a unique solution for TdF. Roots: {[r.evalf() for r in positive_roots]}',-3)
-            return float(positive_roots[0].evalf()**2)
+            # Define constants
+            A=5*self.what*(1+1./self.lhat)*self.doL*(1-mp.exp(-1./self.doL))/self.ghat
+            B=(5/14)*self.xi*(self.ghat-3)*self.what*(1+self.lhat)*self.doL**2*(1-mp.exp(-1./self.doL))**2*mp.exp(1./self.doL)*self.TuN/self.ghat
+
+            f = lambda t:t**7 + A*t**6-B
+            df = lambda t: 7*t**6 + 6*A*t**5
+            d2f = lambda t: 42*t**5 + 30*A*t**4
+            try:
+                res = mp.findroot(f,1,solver='halley',df=df, d2f=d2f, tol=1e-6, maxsteps=1000)
+                return res**2
+            except ValueError:
+                assert False, ('Root not numerically verified',-3)
         
         self.TdF = find_TdF()
-        self.ndF = 7*np.exp(-1./self.doL)*self.TdF**2/( self.xi*(self.ghat-3)*self.doL*(1-np.exp(-1./self.doL)) )
-        self.nuF = (1.+self.lhat- self.ndF*self.TdF**0.5/(self.what*self.doL*(1.-np.exp(-1./self.doL))))/(1+1./self.lhat)
+        self.ndF = 7*mp.exp(-1./self.doL)*self.TdF**2/( self.xi*(self.ghat-3)*self.doL*(1-mp.exp(-1./self.doL)) )
+        self.nuF = (1.+self.lhat- self.ndF*self.TdF**0.5/(self.what*self.doL*(1.-mp.exp(-1./self.doL))))/(1+1./self.lhat)
         assert (self.nuF>0), ('Far-SOL upstream density is negative.',-4)
         assert (self.nuF<self.lhat), ('Far-SOL particle source is negative.',-5)
         assert (self.nuF<1), ('Far-SOL upstream density is higher than near-SOL', -6)

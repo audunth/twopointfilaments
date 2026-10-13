@@ -19,7 +19,7 @@ def save_scan(coll, what, lhat, doL):
     TdF = np.ones([len(coll),len(what),len(lhat),len(doL)])*np.nan
 
     for ci in range(len(coll)):
-        print(f'{coll[ci]}',flush=True)
+        print(f'nuref={coll[ci]}',flush=True)
         for wk in range(len(what)):
             for Lj in range(len(lhat)):
                 for dl in range(len(doL)):
@@ -27,18 +27,18 @@ def save_scan(coll, what, lhat, doL):
                     P[ci,wk,Lj,dl] = Z.status
                     # Both OK
                     if Z.status == 0:
-                        ndN[ci,wk,Lj,dl]=Z.ndN
-                        TuN[ci,wk,Lj,dl]=Z.TuN
-                        TdN[ci,wk,Lj,dl]=Z.TdN
-                        nuF[ci,wk,Lj,dl]=Z.nuF
-                        ndF[ci,wk,Lj,dl]=Z.ndF
-                        TuF[ci,wk,Lj,dl]=Z.TuF
-                        TdF[ci,wk,Lj,dl]=Z.TdF
+                        ndN[ci,wk,Lj,dl]=float(Z.ndN)
+                        TuN[ci,wk,Lj,dl]=float(Z.TuN)
+                        TdN[ci,wk,Lj,dl]=float(Z.TdN)
+                        nuF[ci,wk,Lj,dl]=float(Z.nuF)
+                        ndF[ci,wk,Lj,dl]=float(Z.ndF)
+                        TuF[ci,wk,Lj,dl]=float(Z.TuF)
+                        TdF[ci,wk,Lj,dl]=float(Z.TdF)
                     # Only Near-SOL OK
                     elif Z.status < -3:
-                        ndN[ci,wk,Lj,dl]=Z.ndN
-                        TuN[ci,wk,Lj,dl]=Z.TuN
-                        TdN[ci,wk,Lj,dl]=Z.TdN
+                        ndN[ci,wk,Lj,dl]=float(Z.ndN)
+                        TuN[ci,wk,Lj,dl]=float(Z.TuN)
+                        TdN[ci,wk,Lj,dl]=float(Z.TdN)
                     # Far-SOL
 
     np.savez(saveloc + "TBTPW_scan.npz",
@@ -85,10 +85,10 @@ def save_data_twopoint(coll, what=0, doL=0.33, lhat=5):
              coll=coll, ndN=D[0,:], TuN=D[1,:], TdN=D[2,:])
 
 if __name__=="__main__":
-    coll = 10**np.linspace(0,2,2**7)
-    what = 10**np.linspace(-3,2,2**7)
-    lhat = np.array([1.,2.,5.,10.])
-    doL = np.array([2e-2,5e-2,1e-1,2e-1])
+    coll = 10**np.linspace(-1,2,2**9)
+    what = 10**np.linspace(-3,2,2**9)
+    lhat = np.array([1.,2.])#,5.,10.])
+    doL = np.array([1e-1, 2e-1])#np.array([2e-2,5e-2,1e-1,2e-1])
     
     save_scan(coll, what, lhat, doL)
     save_data_twopoint(coll)
@@ -96,4 +96,3 @@ if __name__=="__main__":
     #for what in what_arr:
     #    for doL in doL_arr:
     #        save_data(coll, what=what, doL=doL, lhat=lhat)
-
