@@ -45,6 +45,7 @@ def plot_vars():
     
     make_figure(what/D['TuN']**0.5, D['coll'], D['what'], D['doL'], D['lhat'], 'what_uN_', log=True)
     make_figure(what/D['TuF']**0.5, D['coll'], D['what'], D['doL'], D['lhat'], 'what_uF_', log=True)
+    make_figure(D['TuF']/D['TuN'], D['coll'], D['what'], D['doL'], D['lhat'], 'TuFvTuN_', log=True)
 
 def plot_good():
     D = np.load(dataloc+'TBTPW_scan.npz')
@@ -180,9 +181,9 @@ def make_fig_ofar():
 
 if __name__=="__main__":
     #test2()
-    test_vs_ofar_nustar()
+    #test_vs_ofar_nustar()
     #make_fig_ofar()
-    plot_good()
-    #plot_vars()
+    #plot_good()
+    plot_vars()
     #compare_near_standard(0)
     #compare_near_standard(20)
